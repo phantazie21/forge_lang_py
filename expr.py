@@ -1,6 +1,17 @@
 class Expr:
     pass
 
+class Assign(Expr):
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+    def accept(self, visitor):
+        return visitor.visitAssign(self)
+    
+    def __str__(self):
+        return f"Assign({self.name}, {self.value})"
+
 class Binary(Expr):
     def __init__(self, expr_left, token_operator, expr_right):
         self.expr_left = expr_left
@@ -43,3 +54,25 @@ class Unary(Expr):
 
     def __str__(self):
         return f"Unary({self.token_operator}, {self.expr_right})"
+    
+class Logical(Expr):
+    def __init__(self, expr_left, operator, expr_right):
+        self.left = expr_left
+        self.operator = operator
+        self.right = expr_right
+
+    def accept(self, visitor):
+        return visitor.visitLogical(self)
+    
+    def __str__(self):
+        return f"Logical({self.expr_left}, {self.operator}, {self.expr_right})"
+
+class Variable(Expr):
+    def __init__(self, token_name):
+        self.name = token_name
+
+    def accept(self, visitor):
+        return visitor.visitVariable(self)
+
+    def __str__(self):
+        return f"Variable({self.name})"

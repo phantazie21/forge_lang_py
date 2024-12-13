@@ -19,7 +19,9 @@ class ForgeScanner:
         "return": TokenType.RETURN,
         "super": TokenType.SUPER,
         "this": TokenType.THIS,
-        "var": TokenType.VAR
+        "var": TokenType.VAR,
+        "break": TokenType.BREAK,
+        "continue": TokenType.CONTINUE,
     }
     
     def __init__(self, source):
@@ -44,53 +46,72 @@ class ForgeScanner:
         c = self.advance()
         if c == '(':
             self.addToken(TokenType.LEFT_PAREN)
+            return
         elif c == ')':
             self.addToken(TokenType.RIGHT_PAREN)
+            return
         elif c == '{':
             self.addToken(TokenType.LEFT_BRACE)
+            return
         elif c == '}':
             self.addToken(TokenType.RIGHT_BRACE)
+            return
         elif c == ',':
             self.addToken(TokenType.COMMA)
+            return
         elif c == '.':
             self.addToken(TokenType.DOT)
+            return
         elif c == '-':
             self.addToken(TokenType.MINUS)
+            return
         elif c == '+':
             self.addToken(TokenType.PLUS)
+            return
         elif c == ';':
             self.addToken(TokenType.SEMICOLON)
+            return
         elif c == '*':
             self.addToken(TokenType.STAR)
+            return
         elif c == '!':
             self.addToken(TokenType.BANG_EQUAL if self.match('=') else TokenType.BANG)
+            return
         elif c == '=':
             self.addToken(TokenType.EQUAL_EQUAL if self.match('=') else TokenType.EQUAL)
+            return
         elif c == '<':
             self.addToken(TokenType.LESS_EQUAL if self.match('=') else TokenType.LESS)
+            return
         elif c == '>':
             self.addToken(TokenType.GREATER_EQUAL if self.match('=') else TokenType.GREATER)
+            return
         elif c == '/':
             if self.match('/'):
                 while self.peek() != '\n' and not self.isAtEnd():
                     self.advance()
             else:
                 self.addToken(TokenType.SLASH)
+            return
         elif c in [' ', '\r', '\t']:
-            pass
+            return
         elif c == '\n':
             self.line += 1
+            return
         elif c == '"':
             self.string()
+            return
         elif c.isdigit():
             self.number()
+            return
         elif c == "o":
             if self.match("r"):
                 self.addToken(TokenType.OR)
-        elif c.isalpha():
+                return
+        if c.isalpha():
             self.identifier()
         else:
-            error(f"Error: Unexpected character '{c}' at line {self.line}")
+            error(self.line, f"Unexpected character '{c}'.")
 
     def advance(self):
         ret = self.source[self.current]

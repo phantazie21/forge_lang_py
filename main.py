@@ -1,22 +1,24 @@
 import sys
 import forge_scanner
-import error
+from error import *
 import forge_parser
 from interpreter import Interpreter
 
+interpreter = Interpreter()
+
 def run(source):
+    global interpreter
+    global hadError
+    global hadRuntimeError
     scanner = forge_scanner.ForgeScanner(source)
     tokens = scanner.scanTokens()
-    if error.hadError:
-        return
     parser = forge_parser.Parser(tokens)
     expr = parser.parse()
-    if error.hadError:
-        return
-    interpreter = Interpreter()
+    if hadError:
+        sys.exit(65)
+    if hadRuntimeError:
+        sys.exit(70)
     interpreter.interpret(expr)
-    if error.hadRuntimeError:
-        return
 
 def runPrompt():
     while True:
@@ -24,14 +26,11 @@ def runPrompt():
         if (prompt == ""):
             break
         run(prompt)
-        error.hadError = False
-        error.hadRuntimeError = False
+        hadError = False
 
 def runFile(filename):
     run(open(filename).read())
-    if error.hadError:
-        sys.exit(70)
-    if error.hadRuntimeError:
+    if hadRuntimeError:
         sys.exit(70)
 
 def main():
