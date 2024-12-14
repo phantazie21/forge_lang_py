@@ -76,3 +76,59 @@ class Variable(Expr):
 
     def __str__(self):
         return f"Variable({self.name})"
+    
+class Call(Expr):
+    def __init__(self, callee, paren, args):
+        self.callee = callee
+        self.paren = paren
+        self.args = args
+    
+    def accept(self, visitor):
+        return visitor.visitCall(self)
+    
+    def __str__(self):
+        return f"Call({self.callee}, {self.paren}, {self.args})"
+    
+class Get(Expr):
+    def __init__(self, _object, name):
+        self.object = _object
+        self.name = name
+
+    def accept(self, visitor):
+        return visitor.visitGet(self)
+    
+    def __str__(self):
+        return f"Get({self.object}, {self.name})"
+    
+class Set(Expr):
+    def __init__(self, _object, name, value):
+        self.object = _object
+        self.name = name
+        self.value = value
+
+    def accept(self, visitor):
+        return visitor.visitSet(self)
+    
+    def __str__(self):
+        return f"Set({self.object}, {self.name}, {self.value})"
+    
+class This(Expr):
+    def __init__(self, keyword):
+        self.keyword = keyword
+
+    def accept(self, visitor):
+        return visitor.visitThis(self)
+    
+    def __str__(self):
+        return f"This({self.keyword})"
+    
+class Super(Expr):
+    def __init__(self, keyword, method):
+        self.keyword = keyword
+        self.method = method
+
+    def accept(self, visitor):
+        return visitor.visitSuper(self)
+
+    def __str__(self):
+        return f"Super({self.keyword}, {self.method})"

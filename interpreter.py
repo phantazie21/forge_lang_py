@@ -1,8 +1,14 @@
-from forge_token import ForgeToken, TokenType
+from forge_token import TokenType
 from error import *
 from environment import Environment
 from stmt import *
 from expr import *
+from forge_callable import ForgeCallable
+from forge_function import ForgeFunction
+from forge_return import ReturnException
+from forge_class import ForgeClass
+from forge_instance import ForgeInstance
+from forge_native import nativeFunctions, nativeGlobals
 
 class BreakException(Exception):
     pass
@@ -12,14 +18,27 @@ class ContinueException(Exception):
 
 class Interpreter:
     def __init__(self):
-        self.environment = Environment()
+        self.globals = Environment()
+        self.environment = self.globals
         self.isInLoop = False
+        self.locals = {}
+        self.defineNatives(nativeFunctions)
+        self.defineGlobals(nativeGlobals)
+
+    def defineNatives(self, functions):
+        for native in functions:
+            native = native()
+            self.globals.define(native.name, native)
+
+    def defineGlobals(self, constants):
+        for name, value in constants.items():
+            self.globals.define(name, value)
 
     def visitLiteral(self, literal):
         return literal.value
     
     def visitGrouping(self, grouping):
-        return self.evaluate(grouping.expression)
+        return self.evaluate(grouping.expr_expression)
     
     def evaluate(self, expr):
         return expr.accept(self)
@@ -73,20 +92,33 @@ class Interpreter:
         return True
 
     def visitUnary(self, unary):
-        right = self.evaluate(unary.right)
-        if unary.operator.tokenType == TokenType.MINUS:
-            self.checkNumberOperand(unary.operator, right)
+        right = self.evaluate(unary.expr_right)
+        if unary.token_operator.tokenType == TokenType.MINUS:
+            self.checkNumberOperand(unary.token_operator, right)
             return -right
-        elif unary.operator.tokenType == TokenType.BANG:
+        elif unary.token_operator.tokenType == TokenType.BANG:
             return not self.isTruthy(right)
         return None
     
     def visitVariable(self, varExpression):
-        return self.environment.get(varExpression.name)
+        return self.lookUpVariable(varExpression.name, varExpression)
     
+    def lookUpVariable(self, name, expr):
+        distance = self.locals.get(expr)
+        if distance is not None:
+            return self.environment.getAt(distance, name.lexeme)
+        else:
+            return self.globals.get(name)
+
     def visitAssign(self, assignExpr):
         value = self.evaluate(assignExpr.value)
-        self.environment.assign(assignExpr.name, value)
+        
+        distance = self.locals.get(assignExpr)
+        if distance:
+            self.environment.assignAt(distance, assignExpr.name, value)
+        else:
+            self.globals.assign(assignExpr.name, value)
+
         return value
     
     def visitLogical(self, logicalExpr):
@@ -100,9 +132,50 @@ class Interpreter:
                 return left
             
         return self.evaluate(logicalExpr.right)
+
+    def visitCall(self, callExpr):
+        callee = self.evaluate(callExpr.callee)
+
+        arguments = []
+        for argument in callExpr.args:
+            arguments.append(self.evaluate(argument))
+        
+        if not isinstance(callee, ForgeCallable):
+            raise RuntimeException("Can only call functions and classes.", callExpr.paren)
+        
+        function = callee
+
+        if len(arguments) != function.arity():
+            raise RuntimeException(f"Expected {function.arity()} arguments, but got {len(arguments)}.", callExpr.paren)
+        try:
+            return function.call(self, arguments)
+        except FunctionException as e:
+            raise RuntimeException(f"in function {e.function}: {e.message}", callExpr.paren)
+    
+    def visitGet(self, expr):
+        _object = self.evaluate(expr.object)
+        if isinstance(_object, ForgeInstance):
+            return _object.get(expr.name)
+        raise RuntimeException("Only instances have properties.", expr.name)
+    
+    def visitSet(self, expr):
+        _object = self.evaluate(expr.object)
+        if not isinstance(_object, ForgeInstance):
+            raise RuntimeException("Only instances have fields.", expr.name)
+        value = self.evaluate(expr.value)
+        _object.set(expr.name, value)
+        return value
+    
+    def visitThis(self, expr):
+        return self.lookUpVariable(expr.keyword, expr)
     
     def visitExpression(self, expressionStatement):
         self.evaluate(expressionStatement.expr)
+        return None
+    
+    def visitFunction(self, functionStatement):
+        function = ForgeFunction(functionStatement, self.environment, False)
+        self.environment.define(functionStatement.name.lexeme, function)
         return None
     
     def visitPrint(self, printStatement):
@@ -155,6 +228,50 @@ class Interpreter:
         if not self.isInLoop:
             raise RuntimeException("Continue statement outside of loop.", continueStatement.token)
         raise ContinueException()
+    
+    def visitReturn(self, returnStatement):
+        value = None
+        if returnStatement.value != None:
+            value = self.evaluate(returnStatement.value)
+        
+        raise ReturnException(value)
+    
+    def visitClass(self, stmt):
+        superclass = None
+        if stmt.superclass != None:
+            superclass = self.evaluate(stmt.superclass)
+            if not isinstance(superclass, ForgeClass):
+                raise RuntimeException("Superclass must be a class.", stmt.superclass.name)
+        self.environment.define(stmt.name.lexeme, None)
+
+        if stmt.superclass is not None:
+            self.environment = Environment(self.environment)
+            self.environment.define("super", superclass)
+
+        methods = {}
+        for method in stmt.methods:
+            function = ForgeFunction(method, self.environment, method.name.lexeme == "init")
+            methods[method.name.lexeme] = function
+        _class = ForgeClass(stmt.name.lexeme, superclass, methods)
+
+        if superclass is not None:
+            self.environment = self.environment.enclosing
+
+        self.environment.assign(stmt.name, _class)
+        return None
+    
+    def visitSuper(self, expr):
+        distance = self.locals.get(expr)
+        superclass = self.environment.getAt(distance, "super")
+
+        _object = self.environment.getAt(distance - 1, "this")
+
+        method = superclass.findMethod(expr.method.lexeme)
+
+        if method is None:
+            raise RuntimeException(f"Undefined property '{expr.method.lexeme}'.", expr.method)
+
+        return method.bind(_object)
 
     def executeBlock(self, statements, environment):
         previous = self.environment
@@ -195,3 +312,6 @@ class Interpreter:
     def execute(self, statement):
         if statement:
             statement.accept(self)
+
+    def resolve(self, expr, depth):
+        self.locals[expr] = depth

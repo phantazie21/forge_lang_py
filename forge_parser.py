@@ -46,6 +46,9 @@ class Parser:
             if isinstance(expr, Variable):
                 name = expr.name
                 return Assign(name, value)
+            if isinstance(expr, Get):
+                get = expr
+                return Set(get.object, get.name, value)
             error(equals, "Invalid assignment target.")
         
         return expr
@@ -115,7 +118,35 @@ class Parser:
             right = self.unary()
             return Unary(operator, right)
         
-        return self.primary()
+        return self.call()
+    
+    def call(self):
+        expr = self.primary()
+
+        while True:
+            if self.match([TokenType.LEFT_PAREN]):
+                expr = self.finishCall(expr)
+            elif self.match([TokenType.DOT]):
+                name = self.consume(TokenType.IDENTIFIER, "Expect property name after '.'.")
+                expr = Get(expr, name)
+            else:
+                break
+
+        return expr
+    
+    def finishCall(self, callee):
+        arguments = []
+        if not self.check(TokenType.RIGHT_PAREN):
+            while True:
+                if len(arguments) >= 255:
+                    error(self.peek(), "Can't have more than 255 arguments.")
+                arguments.append(self.expression())
+                if not self.match([TokenType.COMMA]):
+                    break
+        paren = self.consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
+
+        return Call(callee, paren, arguments)
+
     
     def primary(self):
         if self.match([TokenType.FALSE]):
@@ -135,6 +166,15 @@ class Parser:
         
         if self.match([TokenType.CONTINUE]):
             return Literal("Continue")
+        
+        if self.match([TokenType.THIS]):
+            return This(self.previous())
+        
+        if self.match([TokenType.SUPER]):
+            keyword = self.previous()
+            self.consume(TokenType.DOT, "Expect '.' after 'super'.")
+            method = self.consume(TokenType.IDENTIFIER, "Expect superclass method name.")
+            return Super(keyword, method)
         
         if self.match([TokenType.IDENTIFIER]):
             return Variable(self.previous())
@@ -194,12 +234,46 @@ class Parser:
     
     def declaration(self):
         try:
+            if self.match([TokenType.CLASS]):
+                return self.classDeclaration()
+            if self.match([TokenType.FUN]):
+                return self.function("function")
             if self.match([TokenType.VAR]):
                 return self.varDeclaration()
             return self.statement()
         except:
             self.synchronize()
             return None
+        
+    def classDeclaration(self):
+        name = self.consume(TokenType.IDENTIFIER, "Expect class name.")
+        superclass = None
+        if self.match([TokenType.LESS]):
+            self.consume(TokenType.IDENTIFIER, "Expect superclass name.")
+            superclass = Variable(self.previous())
+        self.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+        methods = []
+        while not self.check(TokenType.RIGHT_BRACE) and not self.isAtEnd():
+            methods.append(self.function("method"))
+
+        self.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
+        return Class(name, superclass, methods)
+        
+    def function(self, kind):
+        name = self.consume(TokenType.IDENTIFIER, f"Expect {kind} name.")
+        self.consume(TokenType.LEFT_PAREN, f"Expect '(' after {kind} name.")
+        parameters = []
+        if not self.check(TokenType.RIGHT_PAREN):
+            while True:
+                if len(parameters) >= 255:
+                    error(self.peek(), "Can't have more than 255 arguments.")
+                parameters.append(self.consume(TokenType.IDENTIFIER, "Expect parameter name."))
+                if not self.match([TokenType.COMMA]):
+                    break
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.")
+        self.consume(TokenType.LEFT_BRACE, "Expect '{' before " + kind + " body.")
+        body = self.block()
+        return Function(name, parameters, body)
         
     def varDeclaration(self):
         name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
@@ -214,6 +288,8 @@ class Parser:
             return self.forStatement()
         if self.match([TokenType.PRINT]):
             return self.printStatement()
+        if self.match([TokenType.RETURN]):
+            return self.returnStatement()
         if self.match([TokenType.WHILE]):
             return self.whileStatement()
         if self.match([TokenType.LEFT_BRACE]):
@@ -226,6 +302,14 @@ class Parser:
             return self.continueStatement()
         return self.expressionStatement()
     
+    def returnStatement(self):
+        keyword = self.previous()
+        value = None
+        if not self.check(TokenType.SEMICOLON):
+            value = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after return value.")
+        return Return(keyword, value)
+
     def forStatement(self):
         self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.")
         initializer = None

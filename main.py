@@ -3,8 +3,10 @@ import forge_scanner
 from error import *
 import forge_parser
 from interpreter import Interpreter
+from resolver import Resolver
 
 interpreter = Interpreter()
+resolver = Resolver(interpreter)
 
 def run(source):
     global interpreter
@@ -18,6 +20,8 @@ def run(source):
         sys.exit(65)
     if hadRuntimeError:
         sys.exit(70)
+
+    resolver.resolveStatements(expr)
     interpreter.interpret(expr)
 
 def runPrompt():

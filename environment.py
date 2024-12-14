@@ -6,7 +6,7 @@ class Environment:
         self.enclosing = enclosing
 
     def define(self, name, value):
-        self.values[name] = value
+        self.values |= {name: value}
 
     def get(self, name):
         if name.lexeme in self.values:
@@ -16,6 +16,16 @@ class Environment:
             return self.enclosing.get(name)
 
         raise RuntimeException(f"Undefined variable '{name.lexeme}'.", name)
+    
+    def getAt(self, distance, name):
+        return self.ancestor(distance).values.get(name)
+    
+    def ancestor(self, distance):
+        environment = self
+        for i in range(distance):
+            environment = environment.enclosing
+
+        return environment
     
     def assign(self, name, value):
         if name.lexeme in self.values:
@@ -27,3 +37,6 @@ class Environment:
             return
         
         raise RuntimeException(f"Undefined variable '{name.lexeme}'", name)
+    
+    def assignAt(self, distance, name, value):
+        self.ancestor(distance).values |= {name.lexeme: value}

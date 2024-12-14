@@ -84,3 +84,38 @@ class Continue(Stmt):
     
     def __str__(self):
         return f"Continue({self.token})"
+    
+class Function(Stmt):
+    def __init__(self, name, params, body):
+        self.name = name
+        self.params = params
+        self.body = body
+
+    def accept(self, visitor):
+        return visitor.visitFunction(self)
+    
+    def __str__(self):
+        return f"Function({self.name}, {self.params}, {self.body})"
+    
+class Return(Stmt):
+    def __init__(self, keyword, value):
+        self.keyword = keyword
+        self.value = value
+
+    def accept(self, visitor):
+        return visitor.visitReturn(self)
+    
+    def __str__(self):
+        return f"Return({self.keyword}, {self.value})"
+    
+class Class(Stmt):
+    def __init__(self, name, superclass, methods):
+        self.name = name
+        self.superclass = superclass
+        self.methods = methods
+
+    def accept(self, visitor):
+        return visitor.visitClass(self)
+    
+    def __str__(self):
+        return f"Class({self.name}, {self.superclass}, {self.methods})"
