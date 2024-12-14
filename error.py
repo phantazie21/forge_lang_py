@@ -15,6 +15,12 @@ class FunctionException(Exception):
         self.message = message
         super().__init__()
 
+class NativeException(Exception):
+    def __init__(self, message, function):
+        self.function = function
+        self.message = message
+        super().__init__()
+
 def error(line, message):
     report(line, message, "")
 

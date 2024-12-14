@@ -208,3 +208,8 @@ class Resolver:
             error_token(expr.keyword, "Can't user 'super' in a class with no superclass.")
         self.resolveLocal(expr, expr.keyword)
         return None
+    
+    def visitArray(self, expr):
+        for element in expr.elements:
+            self.resolve(element)
+        return None

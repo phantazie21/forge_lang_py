@@ -132,3 +132,14 @@ class Super(Expr):
 
     def __str__(self):
         return f"Super({self.keyword}, {self.method})"
+    
+class Array(Expr):
+    def __init__(self, bracket, elements):
+        self.bracket = bracket
+        self.elements = elements
+
+    def accept(self, visitor):
+        return visitor.visitArray(self)
+    
+    def __str__(self):
+        return f"Array({self.bracket}, {self.elements})"

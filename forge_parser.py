@@ -147,7 +147,16 @@ class Parser:
 
         return Call(callee, paren, arguments)
 
-    
+    def array(self):
+        elements = []
+        if not self.check(TokenType.RIGHT_BRACKET):
+            while True:
+                elements.append(self.expression())
+                if not self.match([TokenType.COMMA]):
+                    break
+        bracket = self.consume(TokenType.RIGHT_BRACKET, "Expect ']' after list initializer.")
+        return Array(bracket, elements)
+
     def primary(self):
         if self.match([TokenType.FALSE]):
             return Literal(False)
@@ -183,6 +192,9 @@ class Parser:
             expr = self.expression()
             self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
             return Grouping(expr)
+        
+        if self.match([TokenType.LEFT_BRACKET]):
+            return self.array()
         
         self.error(self.peek(), "Expect expression.")
         

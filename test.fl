@@ -12,3 +12,8 @@ var reader = Reader(a);
 reader.read("fasz.txt");
 out reader.text;
 out reader.name;
+
+var asd = [];
+out asd;
+asd.add();
+out asd.add();

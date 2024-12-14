@@ -56,6 +56,12 @@ class ForgeScanner:
         elif c == '}':
             self.addToken(TokenType.RIGHT_BRACE)
             return
+        elif c == "[":
+            self.addToken(TokenType.LEFT_BRACKET)
+            return
+        elif c == "]":
+            self.addToken(TokenType.RIGHT_BRACKET)
+            return
         elif c == ',':
             self.addToken(TokenType.COMMA)
             return

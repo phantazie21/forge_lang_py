@@ -9,6 +9,7 @@ from forge_return import ReturnException
 from forge_class import ForgeClass
 from forge_instance import ForgeInstance
 from forge_native import nativeFunctions, nativeGlobals
+from forge_array import ForgeArray
 
 class BreakException(Exception):
     pass
@@ -145,17 +146,21 @@ class Interpreter:
         
         function = callee
 
-        if len(arguments) != function.arity():
+        if len(arguments) != function.arity() and not function.variadic():
             raise RuntimeException(f"Expected {function.arity()} arguments, but got {len(arguments)}.", callExpr.paren)
         try:
             return function.call(self, arguments)
         except FunctionException as e:
+            raise RuntimeException(f"in function {e.function}: {e.message}", callExpr.paren)
+        except NativeException as e:
             raise RuntimeException(f"in function {e.function}: {e.message}", callExpr.paren)
     
     def visitGet(self, expr):
         _object = self.evaluate(expr.object)
         if isinstance(_object, ForgeInstance):
             return _object.get(expr.name)
+        if isinstance(_object, ForgeArray):
+            return _object.getMethod(expr.name)
         raise RuntimeException("Only instances have properties.", expr.name)
     
     def visitSet(self, expr):
@@ -169,6 +174,10 @@ class Interpreter:
     def visitThis(self, expr):
         return self.lookUpVariable(expr.keyword, expr)
     
+    def visitArray(self, expr):
+        elements = [self.evaluate(element) for element in expr.elements]
+        return ForgeArray(elements)
+
     def visitExpression(self, expressionStatement):
         self.evaluate(expressionStatement.expr)
         return None
@@ -294,11 +303,18 @@ class Interpreter:
     
     def stringify(self, obj):
         if obj == None:
-            return "nil"
+            return "null"
         if isinstance(obj, float):
             text = str(obj)
             if text.endswith(".0"):
                 text = text[:-2]
+            return text
+        if isinstance(obj, ForgeArray):
+            text = "["
+            for element in obj.elements:
+                text += f"{element}, "
+            text = text.rstrip(", ")
+            text += "]"
             return text
         return str(obj)
 
