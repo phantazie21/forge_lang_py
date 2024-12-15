@@ -1,0 +1,35 @@
+class Vector2 {
+    init(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    subtract(vec) {
+        this.x = this.x - vec.x;
+        this.y = this.y - vec.y;
+    }
+
+    add(vec) {
+        this.x = this.x + vec.x;
+        this.y = this.y + vec.y;
+    }
+
+    toString() {
+        return "Vector(X: " + this.x + ", Y: " + this.y + ")"; 
+    }
+
+    length() {
+        return sqrt(this.x * this.x + this.y * this.y);
+    }
+
+    normalize() {
+        var len = this.length();
+        this.x = this.x / len;
+        this.y = this.y / len;
+    }
+
+    normalized() {
+        var len = this.length();
+        return Vector2(this.x / len, this.y / len);
+    }
+}

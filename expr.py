@@ -143,3 +143,28 @@ class Array(Expr):
     
     def __str__(self):
         return f"Array({self.bracket}, {self.elements})"
+    
+class IndexGet(Expr):
+    def __init__(self, indexee, bracket, index):
+        self.indexee = indexee
+        self.bracket = bracket
+        self.index = index
+
+    def accept(self, visitor):
+        return visitor.visitIndexGet(self)
+    
+    def __str__(self):
+        return f"IndexGet({self.indexee}, {self.bracket}, {self.index})"
+    
+class IndexSet(Expr):
+    def __init__(self, indexee, bracket, index, value):
+        self.indexee = indexee
+        self.bracket = bracket
+        self.index = index
+        self.value = value
+
+    def accept(self, visitor):
+        return visitor.visitIndexSet(self)
+    
+    def __str__(self):
+        return f"IndexGet({self.indexee}, {self.bracket}, {self.index}, {self.value})"

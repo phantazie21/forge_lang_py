@@ -102,7 +102,7 @@ class Resolver:
     def visitIf(self, stmt):
         self.resolve(stmt.condition)
         self.resolve(stmt.thenBranch)
-        if self.elseBranch != None:
+        if stmt.elseBranch != None:
             self.resolve(stmt.elseBranch)
         return None
     
@@ -212,4 +212,21 @@ class Resolver:
     def visitArray(self, expr):
         for element in expr.elements:
             self.resolve(element)
+        return None
+    
+    def visitBreak(self, expr):
+        return None
+    
+    def visitContinue(self, expr):
+        return None
+    
+    def visitIndexGet(self, expr):
+        self.resolve(expr.indexee)
+        self.resolve(expr.index)
+        return None
+    
+    def visitIndexSet(self, expr):
+        self.resolve(expr.value)
+        self.resolve(expr.indexee)
+        self.resolve(expr.index)
         return None

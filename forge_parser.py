@@ -1,7 +1,9 @@
-from forge_token import ForgeToken, TokenType
+from forge_token import TokenType
 from expr import *
 from stmt import *
-from error import *
+from error import error, report
+
+stop_parsing = False
 
 class Parser:
     def __init__(self, tokens):
@@ -49,6 +51,9 @@ class Parser:
             if isinstance(expr, Get):
                 get = expr
                 return Set(get.object, get.name, value)
+            if isinstance(expr, IndexGet):
+                get = expr
+                return IndexSet(get.indexee, get.bracket, get.index, value)
             error(equals, "Invalid assignment target.")
         
         return expr
@@ -129,11 +134,18 @@ class Parser:
             elif self.match([TokenType.DOT]):
                 name = self.consume(TokenType.IDENTIFIER, "Expect property name after '.'.")
                 expr = Get(expr, name)
+            elif self.match([TokenType.LEFT_BRACKET]):
+                expr = self.finishIndexGet(expr)
             else:
                 break
 
         return expr
     
+    def finishIndexGet(self, expr):
+        index = self.expression()
+        bracket = self.consume(TokenType.RIGHT_BRACKET, "Expect ']' after index.")
+        return IndexGet(expr, bracket, index)
+
     def finishCall(self, callee):
         arguments = []
         if not self.check(TokenType.RIGHT_PAREN):
@@ -205,6 +217,8 @@ class Parser:
         self.error(self.peek(), message)
 
     def error(self, token, message):
+        global stop_parsing
+        stop_parsing = True
         if token.tokenType == TokenType.EOF:
             report(token.line , message, " at end")
             raise Exception()
@@ -239,8 +253,12 @@ class Parser:
             self.advance()
 
     def parse(self):
+        global stop_parsing
+        stop_parsing = False
         statements = []
         while not self.isAtEnd():
+            if stop_parsing:
+                break
             statements.append(self.declaration())
         return statements
     
@@ -370,6 +388,8 @@ class Parser:
     def block(self):
         statements = []
         while not self.check(TokenType.RIGHT_BRACE) or self.isAtEnd():
+            if stop_parsing:
+                break
             statements.append(self.declaration())
         
         self.consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")

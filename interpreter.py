@@ -9,7 +9,7 @@ from forge_return import ReturnException
 from forge_class import ForgeClass
 from forge_instance import ForgeInstance
 from forge_native import nativeFunctions, nativeGlobals
-from forge_array import ForgeArray
+from forge_array import ForgeArray, ForgeIndexable
 
 class BreakException(Exception):
     pass
@@ -281,6 +281,24 @@ class Interpreter:
             raise RuntimeException(f"Undefined property '{expr.method.lexeme}'.", expr.method)
 
         return method.bind(_object)
+
+    def visitIndexGet(self, expr):
+        indexee = self.evaluate(expr.indexee)
+        index = self.evaluate(expr.index)
+        if isinstance(indexee, ForgeIndexable):
+            return indexee.get(expr.bracket, index)
+        else:
+            raise RuntimeException("Variable must be indexable.", expr.bracket)
+    
+    def visitIndexSet(self, expr):
+        indexee = self.evaluate(expr.indexee)
+        if not isinstance(indexee, ForgeIndexable):
+            raise RuntimeException("Variable must be indexable.", expr.bracket)
+        
+        index = self.evaluate(expr.index)
+        value = self.evaluate(expr.value)
+        indexee.set(expr.bracket, index, value)
+        return value
 
     def executeBlock(self, statements, environment):
         previous = self.environment

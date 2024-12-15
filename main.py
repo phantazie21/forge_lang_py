@@ -1,6 +1,6 @@
 import sys
 import forge_scanner
-from error import *
+
 import forge_parser
 from interpreter import Interpreter
 from resolver import Resolver
@@ -10,16 +10,13 @@ resolver = Resolver(interpreter)
 
 def run(source):
     global interpreter
-    global hadError
-    global hadRuntimeError
     scanner = forge_scanner.ForgeScanner(source)
     tokens = scanner.scanTokens()
     parser = forge_parser.Parser(tokens)
     expr = parser.parse()
+    from error import hadError
     if hadError:
         sys.exit(65)
-    if hadRuntimeError:
-        sys.exit(70)
 
     resolver.resolveStatements(expr)
     interpreter.interpret(expr)
@@ -34,6 +31,7 @@ def runPrompt():
 
 def runFile(filename):
     run(open(filename).read())
+    from error import hadRuntimeError
     if hadRuntimeError:
         sys.exit(70)
 

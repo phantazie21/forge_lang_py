@@ -2,6 +2,14 @@ from forge_callable import ForgeCallable
 import math
 from error import NativeException, RuntimeException
 
+class ForgeIndexable:
+    def get(self, token, index):
+        pass
+    def set(self, token, index, item):
+        pass
+    def length(self):
+        pass
+
 class Add(ForgeCallable):
     def __init__(self, array):
         self.array = array
@@ -75,7 +83,7 @@ class IsEmpty(ForgeCallable):
         return len(self.array.elements) == 0
     
 
-class ForgeArray:
+class ForgeArray(ForgeIndexable):
     def __init__(self, elements):
         self.elements = elements
         self.methods = self.createMethods()
