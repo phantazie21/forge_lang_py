@@ -1,0 +1,18 @@
+import <Vector2>
+import <Vector3>
+
+var vec2 = Vector2(1, 2);
+var vec3 = Vector3(1, 2, 3);
+
+out vec2.toString();
+out vec3.toString();
+
+vec2.add(Vector2(1, 1));
+vec3.add(Vector3(1, 1, 1));
+
+out vec2.toString();
+out vec3.toString();
+
+vec3.add(Vector3(vec2.x, vec2.y, 0));
+
+out vec3.toString();

@@ -4,19 +4,23 @@ import forge_scanner
 import forge_parser
 from interpreter import Interpreter
 from resolver import Resolver
+from preprocessor import PreProcessor
+import error
 
 interpreter = Interpreter()
 resolver = Resolver(interpreter)
 
-def run(source):
+def run(source, filename=None):
     global interpreter
-    scanner = forge_scanner.ForgeScanner(source)
+    preprocessor = PreProcessor(source, filename)
+    if error.hadError:
+        return
+    scanner = forge_scanner.ForgeScanner(preprocessor.source)
     tokens = scanner.scanTokens()
     parser = forge_parser.Parser(tokens)
     expr = parser.parse()
-    from error import hadError
-    if hadError:
-        sys.exit(65)
+    if error.hadError:
+        return
 
     resolver.resolveStatements(expr)
     interpreter.interpret(expr)
@@ -27,12 +31,13 @@ def runPrompt():
         if (prompt == ""):
             break
         run(prompt)
-        hadError = False
+        error.hadError = False
 
 def runFile(filename):
-    run(open(filename).read())
-    from error import hadRuntimeError
-    if hadRuntimeError:
+    run(open(filename).read(), filename)
+    if error.hadError:
+        sys.exit(65)
+    if error.hadRuntimeError:
         sys.exit(70)
 
 def main():

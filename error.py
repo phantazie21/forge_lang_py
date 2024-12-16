@@ -2,6 +2,7 @@ from forge_token import TokenType
 
 hadError = False
 hadRuntimeError = False
+files = []
 
 class RuntimeException(Exception):
     def __init__(self, message, token):

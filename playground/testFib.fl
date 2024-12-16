@@ -1,0 +1,12 @@
+fn fib(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+var time = clock();
+for (var i = 1; i <= 20; i = i + 1) {
+    out fib(i);
+}
+out "Time: " + (clock() - time) * 1000 + " ms";

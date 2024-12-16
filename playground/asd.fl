@@ -1,0 +1,12 @@
+for (var i = 0; i < 10; i = i + 1) {
+    if (i == 5) {
+        break;
+    }
+    out i;
+}
+
+out "asd.fl ran successfully!";
+
+fn testAsd() {
+    out "testAsd ran successfully!";
+}

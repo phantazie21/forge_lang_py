@@ -1,0 +1,39 @@
+class Vector3 {
+    init(x, y, z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
+    subtract(vec) {
+        this.x = this.x - vec.x;
+        this.y = this.y - vec.y;
+        this.z = this.z - vec.z;
+    }
+
+    add(vec) {
+        this.x = this.x + vec.x;
+        this.y = this.y + vec.y;
+        this.z = this.z + vec.z;
+    }
+
+    toString() {
+        return "Vector(X: " + this.x + ", Y: " + this.y + ", Z: " + this.z + ")"; 
+    }
+
+    length() {
+        return sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+    }
+
+    normalize() {
+        var len = this.length();
+        this.x = this.x / len;
+        this.y = this.y / len;
+        this.z = this.z / len;
+    }
+
+    normalized() {
+        var len = this.length();
+        return Vector3(this.x / len, this.y / len, this.z / len);
+    }
+}

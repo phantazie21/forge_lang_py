@@ -220,7 +220,7 @@ class Interpreter:
                     self.execute(whileStatement.body)
                 except ContinueException:
                     if hasattr(whileStatement, 'increment'):
-                        self.evaluate(whileStatement.increment)
+                        self.executeWithEnvironment(whileStatement.increment, Environment(self.environment))
                     continue
         except BreakException:
             pass
@@ -346,6 +346,14 @@ class Interpreter:
     def execute(self, statement):
         if statement:
             statement.accept(self)
+
+    def executeWithEnvironment(self, statement, environment):
+        previous = self.environment
+        try:
+            self.environment = environment
+            self.execute(statement)
+        finally:
+            self.environment = previous
 
     def resolve(self, expr, depth):
         self.locals[expr] = depth

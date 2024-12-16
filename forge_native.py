@@ -30,22 +30,6 @@ class Clock(ForgeNative):
 
     def call(self, interpreter, _):
         return time.time()
-    
-class Require(ForgeNative):
-    def __init__(self):
-        self.name = "require"
-
-    def arity(self):
-        return 1
-
-    def call(self, interpreter, arguments):
-        lib = arguments[0]
-        lib_path = Path(str(lib))
-
-        if lib_path.is_file() and lib_path.suffix == ".fl":
-            '''sendRunFile(lib)'''
-        else:
-            raise FunctionException(f"{lib} not found or is not a valid ForgeLang library.", self.name)
         
 class GetLine(ForgeNative):
     def __init__(self):
@@ -346,5 +330,5 @@ class Sign(MathFunction):
             return -1
         return 0
 
-nativeFunctions = [Clock, GetLine, Require, Type, ToString, ToNumber, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, WriteToFile, ReadFile, ClearFile, CreateFile]
+nativeFunctions = [Clock, GetLine, Type, ToString, ToNumber, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, WriteToFile, ReadFile, ClearFile, CreateFile]
 nativeGlobals = {"PI": math.pi, "E": math.e}
