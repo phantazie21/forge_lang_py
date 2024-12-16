@@ -80,6 +80,9 @@ class ForgeScanner:
         elif c == '*':
             self.addToken(TokenType.STAR)
             return
+        elif c == "%":
+            self.addToken(TokenType.MODULO)
+            return
         elif c == '!':
             self.addToken(TokenType.BANG_EQUAL if self.match('=') else TokenType.BANG)
             return

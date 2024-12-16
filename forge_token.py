@@ -49,10 +49,12 @@ class TokenType(Enum):
     CONTINUE = 40
     LIST = 41
 
+    #EXTRAS
     LEFT_BRACKET = 42
     RIGHT_BRACKET = 43
+    MODULO = 44
 
-    EOF = 44
+    EOF = 45
 
 class ForgeToken:
     def __init__(self, tokenType, lexeme, literal, line):

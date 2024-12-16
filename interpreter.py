@@ -10,6 +10,7 @@ from forge_class import ForgeClass
 from forge_instance import ForgeInstance
 from forge_native import nativeFunctions, nativeGlobals
 from forge_array import ForgeArray, ForgeIndexable
+import math
 
 class BreakException(Exception):
     pass
@@ -62,11 +63,22 @@ class Interpreter:
             self.checkNumberOperands(binary.operator, left, right)
             return left - right
         elif binary.operator.tokenType == TokenType.STAR:
+            if isinstance(left, str) and isinstance(right, float):
+                return left * math.floor(right)
+            if isinstance(left, float) and isinstance(right, str):
+                return math.floor(left) * right
+            if isinstance(left, ForgeArray) and isinstance(right, float):
+                return ForgeArray(left.elements * math.floor(right))
+            if isinstance(left, float) and isinstance(right, ForgeArray):
+                return ForgeArray(right.elements * math.floor(left))
             self.checkNumberOperands(binary.operator, left, right)
             return left * right
         elif binary.operator.tokenType == TokenType.SLASH:
             self.checkNumberOperands(binary.operator, left, right)
             return left / right
+        elif binary.operator.tokenType == TokenType.MODULO:
+            self.checkNumberOperands(binary.operator, left, right)
+            return left % right
         elif binary.operator.tokenType == TokenType.GREATER:
             self.checkNumberOperands(binary.operator, left, right)
             return left > right
@@ -315,7 +327,7 @@ class Interpreter:
         raise RuntimeException(f"Operand must be a number. Got {operand}", operator)
     
     def checkNumberOperands(self, operator, left, right):
-        if (isinstance(left, int) or isinstance(left, float)) and (isinstance(right, int) or isinstance(right, float)):
+        if isinstance(left, (int, float)) and isinstance(right, (int, float)):
             return
         raise RuntimeException(f"Operands must be numbers. Got {left} and {right}", operator)
     

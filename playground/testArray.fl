@@ -9,3 +9,23 @@ out "xd: " + xd;
 xd.clear();
 
 out "xd: " + xd;
+
+out "test " * 3;
+
+out 3 * "test ";
+
+xd.push(1);
+xd.push(2);
+xd.push(3);
+
+out "xd: " + xd;
+
+out xd * 3;
+
+out 3 * xd;
+
+var asd = "fasz: " + 3;
+
+out asd;
+
+out "fasz" % 3;
