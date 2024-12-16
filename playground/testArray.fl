@@ -1,0 +1,11 @@
+var xd = [];
+xd.push(1);
+xd.push(2);
+
+out "does it contain 1: " + xd.contains(1);
+out "does it contain 3: " + xd.contains(3);
+out "xd: " + xd;
+
+xd.clear();
+
+out "xd: " + xd;

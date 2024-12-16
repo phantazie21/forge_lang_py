@@ -51,9 +51,9 @@ class Interpreter:
             if isinstance(left, str) or isinstance(right, str):
                 if isinstance(left, str) and isinstance(right, str):
                     return left + right
-                if isinstance(left, float):
+                if isinstance(right, str):
                     return self.stringify(left) + right
-                if isinstance(right, float):
+                if isinstance(left, str):
                     return left + self.stringify(right)
 
             self.checkNumberOperands(binary.operator, left, right)
@@ -297,7 +297,7 @@ class Interpreter:
         
         index = self.evaluate(expr.index)
         value = self.evaluate(expr.value)
-        indexee.set(expr.bracket, index, value)
+        indexee._set(expr.bracket, index, value)
         return value
 
     def executeBlock(self, statements, environment):

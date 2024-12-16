@@ -5,7 +5,7 @@ from error import NativeException, RuntimeException
 class ForgeIndexable:
     def get(self, token, index):
         pass
-    def set(self, token, index, item):
+    def _set(self, token, index, item):
         pass
     def length(self):
         pass
@@ -82,6 +82,26 @@ class IsEmpty(ForgeCallable):
     def call(self, interpreter, arguments):
         return len(self.array.elements) == 0
     
+class Contains(ForgeCallable):
+    def __init__(self, array):
+        self.array = array
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        return arguments[0] in self.array.elements
+    
+class Clear(ForgeCallable):
+    def __init__(self, array):
+        self.array = array
+
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        self.array.elements = []
+        return None
 
 class ForgeArray(ForgeIndexable):
     def __init__(self, elements):
@@ -95,6 +115,8 @@ class ForgeArray(ForgeIndexable):
         methods |= {"push": Push(self)}
         methods |= {"pop": Pop(self)}
         methods |= {"length": Length(self)}
+        methods |= {"contains": Contains(self)}
+        methods |= {"clear": Clear(self)}
         return methods
 
     def getMethod(self, name):
@@ -110,7 +132,7 @@ class ForgeArray(ForgeIndexable):
         except Exception as e:
             raise RuntimeException("Index out of range.", token)
         
-    def set(self, token, index, item):
+    def _set(self, token, index, item):
         idx = self.indexToInteger(token, index)
         try:
             self.elements[idx] = item
