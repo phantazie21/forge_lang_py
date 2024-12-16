@@ -1,0 +1,73 @@
+import <Pair>
+
+class Map {
+    init(pairs) {
+        this.pairs = pairs;
+    }
+
+    containsKey(key) {
+        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+            if (this.pairs[i].key == key) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    containsValue(value) {
+        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+            if (this.pairs[i].value == value) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    get(key) {
+        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+            if (this.pairs[i].key == key) {
+                return this.pairs[i].value;
+            }
+        }
+        return null;
+    }
+
+    set(key, value) {
+        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+            if (this.pairs[i].key == key) {
+                this.pairs[i].value = value;
+                return;
+            }
+        }
+        this.pairs.add(Pair(key, value));
+    }
+
+    remove(key) {
+        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+            if (this.pairs[i].key == key) {
+                this.pairs.removeValue(this.pairs[i]);
+                return;
+            }
+        }
+    }
+
+    removeValue(value) {
+        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+            if (this.pairs[i].value == value) {
+                this.pairs.removeValue(this.pairs[i]);
+                return;
+            }
+        }
+    }
+
+    toString() {
+        var str = "Map(";
+        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+            str = str + this.pairs[i].toString();
+            if (i < this.pairs.length() - 1) {
+                str = str + ", ";
+            }
+        }
+        return str + ")";
+    }
+}

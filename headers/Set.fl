@@ -1,0 +1,46 @@
+class Set {
+    init(values) {
+        this.values = values;
+    }
+
+    add(value) {
+        if (!this.contains(value)) {
+            this.values.add(value);
+        }
+    }
+
+    remove(value) {
+        this.values.removeValue(value);
+    }
+
+    removeAt(index) {
+        this.values.removeAt(index);
+    }
+
+    get(index) {
+        return this.values[index];
+    }
+
+    contains(value) {
+        return this.values.contains(value);
+    }
+
+    length() {
+        return this.values.length();
+    }
+
+    toString() {
+        var result = "Set(";
+        for (var i = 0; i < this.values.length(); i = i + 1) {
+            result = result + this.values[i];
+            if (i < this.values.length() - 1) {
+                result = result + ", ";
+            }
+        }
+        return result + ")";
+    }
+
+    clear() {
+        this.values.clear();
+    }
+}

@@ -1,14 +1,7 @@
 from forge_callable import ForgeCallable
 import math
 from error import NativeException, RuntimeException
-
-class ForgeIndexable:
-    def get(self, token, index):
-        pass
-    def _set(self, token, index, item):
-        pass
-    def length(self):
-        pass
+from forge_indexable import ForgeIndexable
 
 class Add(ForgeCallable):
     def __init__(self, array):
@@ -35,6 +28,46 @@ class Remove(ForgeCallable):
             return self.array.elements.pop(0)
         except Exception as e:
             raise NativeException("Array is empty.", "remove")
+        
+class RemoveAt(ForgeCallable):
+    def __init__(self, array):
+        self.array = array
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        try:
+            if len(self.array.elements) == 0:
+                raise Exception("Array is empty.")
+            if not isinstance(arguments[0], float):
+                raise TypeError()
+            arguments[0] = math.floor(arguments[0])
+            if arguments[0] >= len(self.array.elements):
+                raise IndexError()
+            del self.array.elements[arguments[0]]
+            return None
+        except TypeError:
+            raise NativeException("Index must be a number.", "removeAt")
+        except IndexError:
+            raise NativeException("Index out of range.", "removeAt")
+        except Exception as e:
+            raise NativeException(e, "removeAt")
+        
+class RemoveValue(ForgeCallable):
+    def __init__(self, array):
+        self.array = array
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        try:
+            if len(self.array.elements) == 0:
+                raise Exception("Array is empty.")
+            return self.array.elements.remove(arguments[0])
+        except Exception as e:
+            raise NativeException(e, "removeAt")
         
 class Push(ForgeCallable):
     def __init__(self, array):
@@ -117,6 +150,8 @@ class ForgeArray(ForgeIndexable):
         methods |= {"length": Length(self)}
         methods |= {"contains": Contains(self)}
         methods |= {"clear": Clear(self)}
+        methods |= {"removeAt": RemoveAt(self)}
+        methods |= {"removeValue": RemoveValue(self)}
         return methods
 
     def getMethod(self, name):

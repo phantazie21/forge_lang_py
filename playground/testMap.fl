@@ -1,0 +1,24 @@
+import <Map>
+
+var map = Map([Pair("a", 1), Pair("b", 2), Pair("c", 3)]);
+out map.toString();
+
+out map.get("c");
+map.set("d", 4);
+out map.toString();
+map.set(5, "e");
+
+out map.containsValue(4);
+out map.containsValue(5);
+out map.containsKey("d");
+out map.containsKey("e");
+
+out map.toString();
+map.remove("d");
+out map.toString();
+map.remove(5);
+out map.toString();
+map.set("a", 6);
+out map.toString();
+map.removeValue(6);
+out map.toString();

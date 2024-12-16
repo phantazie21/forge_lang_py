@@ -1,0 +1,17 @@
+import <Set>
+
+var set = Set([1, 2, 3]);
+
+out set.toString();
+
+set.remove(2);
+
+out set.toString();
+
+set.removeAt(1);
+
+out set.toString();
+
+set.add(1);
+
+out set.toString();
