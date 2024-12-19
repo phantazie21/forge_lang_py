@@ -1,0 +1,80 @@
+class String {
+    init(value) {
+        if (type(value) == "string") {
+            this.string = value;
+            this.array = toArray(this.string);
+        }
+        else if (type(value) == "array") {
+            this.string = toString(value);
+            this.array = toArray(this.string);
+        }
+    }
+
+    replace(char, value) {
+        for (var i = 0; i < this.array.length(); i = i + 1) {
+            if (this.array[i] == char) {
+                this.array[i] = value;
+                break;
+            }
+        }
+        this.string = toString(this.array);
+    }
+
+    replaceAll(char, value) {        
+        for (var i = 0; i < this.array.length(); i = i + 1) {
+            if (this.array[i] == char) {
+                this.array[i] = value;
+            }
+        }
+        this.string = toString(this.array);
+    }
+
+    split(separator) {
+        var ret = [];
+        var temp = [];
+        for (var i = 0; i < this.array.length(); i = i + 1) {
+            if (this.array[i] != separator) {
+                temp.add(this.array[i]);
+                continue;
+            }
+            ret.add(toString(temp));
+            temp = [];
+        }
+        ret.add(toString(temp));
+        return ret;
+    }
+
+    trim(char) {
+        for (var i = this.array.length() - 1; i >= 0; i = i - 1) {
+            if (this.array[i] == char) {
+                this.array.pop();
+            }
+            else {
+                break;
+            }
+        }
+        this.string = toString(this.array);
+    }
+
+    toUpperCase() {
+        for (var i = this.array.length() - 1; i >= 0; i = i - 1) {
+            this.array[i] = toUpper(this.array[i]);
+        }
+        this.string = toString(this.array);
+    }
+
+    toLowerCase() {
+        for (var i = this.array.length() - 1; i >= 0; i = i - 1) {
+            this.array[i] = toLower(this.array[i]);
+        }
+        this.string = toString(this.array);
+    }
+
+    contains(char) {
+        return this.array.contains(char);
+    }
+
+    toString() {
+        return this.string;
+    }
+}

@@ -24,12 +24,12 @@ class ForgeScanner:
         "continue": TokenType.CONTINUE,
     }
     
-    def __init__(self, source):
+    def __init__(self, source, line=1):
         self.source = source
         self.tokens = []
         self.start = 0
         self.current = 0
-        self.line = 1
+        self.line = line
 
     def scanTokens(self):
         while not self.isAtEnd():

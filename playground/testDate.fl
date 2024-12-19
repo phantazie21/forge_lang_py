@@ -1,0 +1,33 @@
+import <Date>
+
+var test = Date("2024-12-24");
+
+out test.toString();
+
+var test2 = Date([2024, 12, 24]);
+
+out test2.toString();
+
+var test3 = Date("2024.12.24");
+
+out test3.toString();
+
+var test4 = Date("2024/12/24");
+
+out test4.toString();
+
+var test5 = Date(1);
+
+out test5.toString();
+
+out test.toArray();
+
+test.addDays(1);
+
+out test.toString();
+
+out type(test5.year);
+
+var test6 = Date(now());
+
+out test6.toString();

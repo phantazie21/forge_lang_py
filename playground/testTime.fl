@@ -1,0 +1,10 @@
+import <Time>
+
+for (var i = 0; i < 10; i = i + 1) {
+    out i;
+    sleep(100);
+}
+
+out "wait for 2 seconds";
+sleep(2000);
+out "done.";

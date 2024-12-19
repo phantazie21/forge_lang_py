@@ -15,7 +15,7 @@ def run(source, filename=None):
     preprocessor = PreProcessor(source, filename)
     if error.hadError:
         return
-    scanner = forge_scanner.ForgeScanner(preprocessor.source)
+    scanner = forge_scanner.ForgeScanner(preprocessor.source, -preprocessor.lines + len(preprocessor.includes))
     tokens = scanner.scanTokens()
     parser = forge_parser.Parser(tokens)
     expr = parser.parse()

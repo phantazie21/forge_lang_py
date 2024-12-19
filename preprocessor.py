@@ -42,13 +42,13 @@ class PreProcessor:
                         paths.add(path)
                         self.includes[path.as_posix()] = Import(path, n, match.start(), match.end(), module)
                 except Exception as e:
-                    error.error(n+1, e)
+                    error.error(n + 1, e)
                     break
             for module in list(self.includes.values()):
                 if module.path in processed_files:
                     continue
                 text = module.path.read_text()
-                self.lines += 1
+                self.lines += text.count("\n")
                 source = source.replace(f"import {module.module}", text)
                 processed_files.add(module.path)
                 source = process_imports(source, module.path, processed_files)

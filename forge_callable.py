@@ -1,7 +1,7 @@
 class ForgeCallable:
-    def arity():
+    def arity(self):
         pass
-    def call(interpreter, arguments):
+    def call(self, interpreter, arguments):
         pass
-    def variadic():
+    def variadic(self):
         return False

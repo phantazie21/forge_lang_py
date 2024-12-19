@@ -1,0 +1,29 @@
+import <String>
+
+var str = String("fasz");
+var str2 = String(["f", "a", "s", "z"]);
+
+str.replace("a", "b");
+out str.toString();
+str2.replace("a", "b");
+out str2.toString();
+
+str.replace("f", "b");
+out str.toString();
+str2.replace("f", "b");
+out str2.toString();
+str.replaceAll("b", "a");
+out str.toString();
+str2.replaceAll("b", "a");
+out str2.toString();
+
+var test = String("I am a text!");
+out test.split(" ");
+test.trim("!");
+out test.toString();
+test = String("I am a text!");
+test.toUpperCase();
+out test.toString();
+test.toLowerCase();
+out test.toString();
+out test.contains("i");

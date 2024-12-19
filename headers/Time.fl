@@ -1,0 +1,7 @@
+fn sleep(milliseconds) {
+    var start = clock();
+    while ((clock() - start) * 1000 < milliseconds) {
+        continue;
+    }
+    return null;
+}

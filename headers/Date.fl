@@ -1,0 +1,54 @@
+import <String>
+
+class Date {
+    init(value) {
+        if (type(value) == "string") {
+            var temp = String(value);
+            var array = [];
+            if (temp.contains("/")) {
+                array = temp.split("/");
+            }
+            else if (temp.contains("-")) {
+                array = temp.split("-");
+            }
+            else if (temp.contains(".")) {
+                array = temp.split(".");
+            }
+
+            this.year = toNum(array[0]);
+            this.month = toNum(array[1]);
+            this.day = toNum(array[2]);
+        }
+        else if (type(value) == "array") {
+            this.year = toNum(value[0]);
+            this.month = toNum(value[1]);
+            this.day = toNum(value[2]);
+        }
+        else {
+            var temp = now();
+            this.year = temp[0];
+            this.month = temp[1];
+            this.day = temp[2];
+        }
+    }
+
+    addDays(value) {
+        this.day = this.day + value;
+    }
+
+    addMonths(value) {
+        this.month = this.month + value;
+    }
+
+    addYears(value) {
+        this.year = this.year + value;
+    }
+
+    toArray() {
+        return [this.year, this.month, this.day];
+    }
+
+    toString() {
+        return this.year + "/" + this.month + "/" + this.day;
+    }
+}

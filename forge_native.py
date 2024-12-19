@@ -3,10 +3,12 @@ from forge_function import ForgeFunction
 from forge_class import ForgeClass
 from forge_instance import ForgeInstance
 from error import FunctionException
-import math
+from forge_array import ForgeArray
 
+import math
 import time
 from pathlib import Path
+import datetime
 
 class ForgeNative(ForgeCallable):
     def __init__(self):
@@ -17,6 +19,9 @@ class ForgeNative(ForgeCallable):
 
     def call(self, interpreter, arguments):
         pass
+
+    def variadic(self):
+        return False
 
     def __str__(self):
         return "<native fn>"
@@ -61,12 +66,25 @@ class Type(ForgeNative):
             return "function"
         elif isinstance(obj, ForgeClass):
             return "class"
+        elif isinstance(obj, ForgeArray):
+            return "array"
         elif isinstance(obj, ForgeInstance):
             return obj._class.name
         elif obj is None:
             return "null"
 
         return str(obj)
+    
+class Now(ForgeNative):
+    def __init__(self):
+        self.name = "now"
+
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        temp = datetime.datetime.now()
+        return ForgeArray([float(temp.year), float(temp.month), float(temp.day)])
     
 class ToString(ForgeNative):
     def __init__(self):
@@ -81,7 +99,37 @@ class ToString(ForgeNative):
         if isinstance(obj, ForgeNative):
             return f"fn <{obj.name}>"
 
+        if isinstance(obj, ForgeArray):
+            return "".join(map(str, obj.elements))
         return str(obj)
+    
+class ToUpper(ForgeNative):
+    def __init__(self):
+        self.name = "toUpper"
+
+    def arity(self):
+        return 1
+
+    def call(self, interpreter, arguments):
+        obj = arguments[0]
+
+        if not isinstance(obj, str):
+            raise FunctionException("Expect type 'string'.", self.name)
+        return obj.upper()
+    
+class ToLower(ForgeNative):
+    def __init__(self):
+        self.name = "toLower"
+
+    def arity(self):
+        return 1
+
+    def call(self, interpreter, arguments):
+        obj = arguments[0]
+
+        if not isinstance(obj, str):
+            raise FunctionException("Expect type 'string'.", self.name)
+        return obj.lower()
 
 class ToNumber(ForgeNative):
     def __init__(self):
@@ -93,13 +141,27 @@ class ToNumber(ForgeNative):
     def call(self, interpreter, arguments):
         obj = arguments[0]
 
-        if not isinstance(obj, str):
-            raise FunctionException("Expect type 'string'.", self.name)
-
         try:
             return float(obj)
         except ValueError:
             raise FunctionException("The string doesn't represent a valid number.", self.name)
+        
+class ToArray(ForgeNative):
+    def __init__(self):
+        self.name = "toArray"
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        obj = arguments[0]
+        if not isinstance(obj, str):
+            raise FunctionException("Expect type 'string'.", self.name)
+        
+        try:
+            return ForgeArray(list(obj))
+        except Exception:
+            raise FunctionException("Error during forming array.", self.name)
         
 class WriteToFile(ForgeNative):
     def __init__(self):
@@ -330,5 +392,5 @@ class Sign(MathFunction):
             return -1
         return 0
 
-nativeFunctions = [Clock, GetLine, Type, ToString, ToNumber, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, WriteToFile, ReadFile, ClearFile, CreateFile]
+nativeFunctions = [Clock, GetLine, Type, Now, ToString, ToUpper, ToLower, ToNumber, ToArray, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, WriteToFile, ReadFile, ClearFile, CreateFile]
 nativeGlobals = {"PI": math.pi, "E": math.e}

@@ -28,4 +28,6 @@ var asd = "fasz: " + 3;
 
 out asd;
 
+out 5 % 3;
+
 out "fasz" % 3;
