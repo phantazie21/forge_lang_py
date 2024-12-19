@@ -31,3 +31,9 @@ class ForgeClass(ForgeCallable):
         if initializer == None:
             return 0
         return initializer.arity()
+    
+    def variadic(self):
+        initializer = self.findMethod("init")
+        if initializer == None:
+            return 0
+        return initializer.variadic()

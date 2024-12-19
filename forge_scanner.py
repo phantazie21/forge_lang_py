@@ -174,8 +174,11 @@ class ForgeScanner:
 
         self.addToken(TokenType.NUMBER, float(self.source[self.start:self.current]))
 
+    def isalnumqm(self, char):
+        return char.isalnum() or char == "?"
+
     def identifier(self):
-        while self.peek().isalnum():
+        while self.isalnumqm(self.peek()):
             self.advance()
 
         text = self.source[self.start:self.current]

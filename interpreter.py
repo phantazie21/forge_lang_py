@@ -157,7 +157,7 @@ class Interpreter:
             raise RuntimeException("Can only call functions and classes.", callExpr.paren)
         
         function = callee
-
+        function.variadic()
         if len(arguments) != function.arity() and not function.variadic():
             raise RuntimeException(f"Expected {function.arity()} arguments, but got {len(arguments)}.", callExpr.paren)
         try:

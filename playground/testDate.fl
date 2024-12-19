@@ -31,3 +31,11 @@ out type(test5.year);
 var test6 = Date(now());
 
 out test6.toString();
+
+var test7 = Date();
+
+out test7.toString();
+
+var asd? = "xd" or "xd";
+
+out asd?;
