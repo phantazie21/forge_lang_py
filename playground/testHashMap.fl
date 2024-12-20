@@ -1,0 +1,17 @@
+var cache = hashMap();
+
+fn fib(n) {
+    if (n < 2) {
+        return n;
+    }
+    if (cache.get(n)) {
+        return cache.get(n);
+    }
+    var res = fib(n - 1) + fib(n - 2);
+    cache.set(n, res);
+    return res;
+}
+
+var time = clock();
+fib(30);
+out "Time: " + (clock() - time) * 1000 + " ms";

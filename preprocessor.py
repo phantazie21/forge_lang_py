@@ -14,7 +14,7 @@ class Import:
         self.module = module
 
 class PreProcessor:
-    def __init__(self, source, filename=None):
+    def __init__(self, source, filename=""):
         self.includes : dict[str, Import] = {}
         self.source : str = source
         self.lines = 1

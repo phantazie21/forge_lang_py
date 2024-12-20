@@ -100,6 +100,10 @@ class Interpreter:
     def isTruthy(self, obj):
         if obj == None:
             return False
+        if isinstance(obj, str):
+            return obj != ""
+        if isinstance(obj, float):
+            return obj != 0
         if isinstance(obj, bool):
             return obj
         return True
@@ -346,7 +350,10 @@ class Interpreter:
             text = text.rstrip(", ")
             text += "]"
             return text
-        return str(obj)
+        try:
+            return obj.__str__()
+        except:
+            return str(obj)
 
     def interpret(self, statements):
         try:

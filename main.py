@@ -10,12 +10,15 @@ import error
 interpreter = Interpreter()
 resolver = Resolver(interpreter)
 
-def run(source, filename=None):
+def run(source, filename=""):
     global interpreter
     preprocessor = PreProcessor(source, filename)
     if error.hadError:
         return
-    scanner = forge_scanner.ForgeScanner(preprocessor.source, -preprocessor.lines + len(preprocessor.includes))
+    startLines = 1
+    if len(preprocessor.includes) > 0:
+        startLines = -preprocessor.lines + len(preprocessor.includes)
+    scanner = forge_scanner.ForgeScanner(preprocessor.source, startLines)
     tokens = scanner.scanTokens()
     parser = forge_parser.Parser(tokens)
     expr = parser.parse()
@@ -50,4 +53,5 @@ def main():
     else:
         runPrompt()
 
-main()
+if __name__ == "__main__":
+    main()

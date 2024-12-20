@@ -25,6 +25,71 @@ class ForgeNative(ForgeCallable):
 
     def __str__(self):
         return "<native fn>"
+
+#CLASSES
+class SetHashMap(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "set"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 2
+    
+    def call(self, interpreter, arguments):
+        if arguments[0] in self.parent.fields:
+            self.parent.fields[arguments[0]] = arguments[1]
+            return arguments[1]
+        elif str(arguments[0]) in self.parent.fields:
+            self.parent.fields[str(arguments[0])] = arguments[1]
+            return arguments[1]
+        else:
+            try:
+                self.parent.fields[arguments[0]] = arguments[1]
+                return arguments[1]
+            except TypeError:
+                raise FunctionException(f"Undefined property '{arguments[0]}'.", "set")
+            
+class GetHashMap(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "get"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        return self.parent.fields.get(arguments[0]) or self.parent.fields.get(str(arguments[0]))
+
+class HashMap(ForgeInstance):
+    name = "HashMap"
+    def __init__(self):
+        self._class = HashMap
+        self.fields = {}
+        self.methods = {"set": SetHashMap, "get": GetHashMap}
+
+    def get(self, name):
+        try:
+            return self.methods[name.lexeme](self, name)  # type: ignore
+        except KeyError:
+            raise FunctionException(f"Undefined method.", name.lexeme)
+        
+    def __str__(self):
+        return str(self.fields)
+        
+
+
+#FUNCTIONS
+class Hash(ForgeNative):
+    def __init__(self):
+        self.name = "hashMap"
+
+    def arity(self):
+        return 0
+
+    def call(self, interpreter, _):
+        return HashMap()
     
 class Clock(ForgeNative):
     def __init__(self):
@@ -392,5 +457,5 @@ class Sign(MathFunction):
             return -1
         return 0
 
-nativeFunctions = [Clock, GetLine, Type, Now, ToString, ToUpper, ToLower, ToNumber, ToArray, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, WriteToFile, ReadFile, ClearFile, CreateFile]
+nativeFunctions = [Hash, Clock, GetLine, Type, Now, ToString, ToUpper, ToLower, ToNumber, ToArray, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, WriteToFile, ReadFile, ClearFile, CreateFile]
 nativeGlobals = {"PI": math.pi, "E": math.e}
