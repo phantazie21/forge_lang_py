@@ -80,6 +80,54 @@ class HashMap(ForgeInstance):
     def __str__(self):
         return str(self.fields)
     
+class SetButton(ForgeNative):
+    def __init__(self, button, _):
+        self.name = "setText"
+        self.button = button
+    
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        if not isinstance(arguments[0], str):
+            raise FunctionException("Expect type 'string'.", self.name)
+        self.button.fields.get("button").setText(arguments[0])
+
+class GetButton(ForgeNative):
+    def __init__(self, button, _):
+        self.name = "getText"
+        self.button = button
+    
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        return self.button.fields.get("button").text()
+    
+class ClickButton(ForgeNative):
+    def __init__(self, button, _):
+        self.name = "click"
+        self.button = button
+    
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        return self.button.fields.get("button").click()
+
+class Button(ForgeInstance):
+    name = "Button"
+    def __init__(self, button):
+        self._class = button
+        self.fields = {"button": button}
+        self.methods = {"setText": SetButton, "getText": GetButton, "click": ClickButton}
+
+    def get(self, name):
+        try:
+            return self.methods[name.lexeme](self, name)  # type: ignore
+        except KeyError:
+            raise FunctionException(f"Undefined method.", name.lexeme)
+    
 class AddButton(ForgeNative):
     def __init__(self, parent, token):
         self.name = "addButton"
@@ -87,27 +135,78 @@ class AddButton(ForgeNative):
         self.token = token
 
     def arity(self):
-        return 4 # text, position, size, callback
+        return 5 # text, position, size, callback, style
     
+    def variadic(self):
+        return True
+
     def call(self, interpreter, arguments):
+        if len(arguments) < 4 or len(arguments) > 5:
+            raise FunctionException("Expect at least 4 (max 5) arguments: Text: string, Position: [x, y], Size: [width, height], onClick: function, (style: string !optional).")
         text = arguments[0]
         position = arguments[1]
         size = arguments[2]
         callback = arguments[3]
+        style = None
+        if len(arguments) == 5:
+            style = arguments[4]
         if not isinstance(position, ForgeArray) or position.length() != 2:
             raise FunctionException("Second argument must be an array of [x, y].", self.name)
         if not isinstance(size, ForgeArray) or size.length() != 2:
             raise FunctionException("Third argument must be an array of [width, height].", self.name)
         if not isinstance(callback, ForgeFunction):
             raise FunctionException("Fourth argument must be a callable function.", self.name)
+        if style and not isinstance(style, str):
+            raise FunctionException("Fifth argument must be a string of the stylesheet.", self.name)
         
         button = QPushButton(text, self.parent.fields.get("window"))
         button.setGeometry(
             int(position.elements[0]), int(position.elements[1]),
             int(size.elements[0]), int(size.elements[1])
         )
+        if style:
+            button.setStyleSheet(style)
         button.clicked.connect(lambda: callback.call(interpreter, []))
         button.show()
+
+        return Button(button)
+
+class SetLabel(ForgeNative):
+    def __init__(self, label, _):
+        self.name = "set"
+        self.label = label
+    
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        if not isinstance(arguments[0], str):
+            raise FunctionException("Expect type 'string'.", self.name)
+        self.label.fields.get("label").setText(arguments[0])
+
+class GetLabel(ForgeNative):
+    def __init__(self, label, _):
+        self.name = "get"
+        self.label = label
+    
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        return self.label.fields.get("label").text()
+
+class Label(ForgeInstance):
+    name = "Label"
+    def __init__(self, label):
+        self._class = Label
+        self.fields = {"label": label}
+        self.methods = {"set": SetLabel, "get": GetLabel}
+
+    def get(self, name):
+        try:
+            return self.methods[name.lexeme](self, name)  # type: ignore
+        except KeyError:
+            raise FunctionException(f"Undefined method.", name.lexeme)
 
 class AddLabel(ForgeNative):
     def __init__(self, parent, token):
@@ -116,23 +215,37 @@ class AddLabel(ForgeNative):
         self.token = token
 
     def arity(self):
-        return 3 # text, position, size
+        return 3 # text, position, size, style
+    
+    def variadic(self):
+        return True
     
     def call(self, interpreter, arguments):
+        if len(arguments) < 3 or len(arguments) > 4:
+            raise FunctionException("Expect at least 3 (max 4) arguments: Text: string, Position: [x, y], Size: [width, height], (style: string !optional).")
         text = arguments[0]
         position = arguments[1]
         size = arguments[2]
+        style = None
+        if len(arguments) == 4:
+            style = arguments[3]
         if not isinstance(position, ForgeArray) or position.length() != 2:
             raise FunctionException("Second argument must be an array of [x, y].", self.name)
         if not isinstance(size, ForgeArray) or size.length() != 2:
             raise FunctionException("Third argument must be an array of [width, height].", self.name)
+        if style and not isinstance(style, str):
+            raise FunctionException("Fourth argument must be a string of the stylesheet.", self.name)
         
         label = QLabel(text, self.parent.fields.get("window"))
         label.setGeometry(
             int(position.elements[0]), int(position.elements[1]),
             int(size.elements[0]), int(size.elements[1])
         )
+        if style:
+            label.setStyleSheet(style)
         label.show()
+
+        return Label(label)
     
 class AddCheckbox(ForgeNative):
     def __init__(self, parent, token):
@@ -141,32 +254,39 @@ class AddCheckbox(ForgeNative):
         self.token = token
 
     def arity(self):
-        return 4 # label, position, size, callback
+        return 5 # label, position, size, callback, style
     
     def variadic(self):
         return True
 
     def call(self, interpreter, arguments):
-        if len(arguments) < 3:
-            raise FunctionException('Give at least 3 arguments: Text: str, Position: [x, y], Size: [width, height], (onChange: function !optional).', self.name)
+        if len(arguments) < 3 or len(arguments) > 5:
+            raise FunctionException('Expect at least 3 (max 5) arguments: Text: str, Position: [x, y], Size: [width, height], (onChange: function !optional), (style: str !optional).', self.name)
         text = arguments[0]
         position = arguments[1]
         size = arguments[2]
         callback = None
-        if len(arguments) == 4:
+        if len(arguments) >= 4:
             callback = arguments[3]
+        style = None
+        if len(arguments) == 5:
+            style = arguments[4]
         if not isinstance(position, ForgeArray) or position.length() != 2:
             raise FunctionException("Second argument must be an array of [x, y].", self.name)
         if not isinstance(size, ForgeArray) or size.length() != 2:
             raise FunctionException("Third argument must be an array of [width, height].", self.name)
         if callback and not isinstance(callback, ForgeFunction):
             raise FunctionException("Fourth argument must be a callable function.", self.name)
+        if style and not isinstance(style, str):
+            raise FunctionException("Fifth argument must be a string of the stylesheet.", self.name)
         
         checkbox = QCheckBox(text, self.parent.fields.get("window"))
         checkbox.setGeometry(
             int(position.elements[0]), int(position.elements[1]),
             int(size.elements[0]), int(size.elements[1])
         )
+        if style:
+            checkbox.setStyleSheet(style)
         if callback:
             checkbox.stateChanged.connect(lambda state: callback.call(interpreter, [state]))
         checkbox.show()
@@ -215,16 +335,26 @@ class AddTextbox(ForgeNative):
         self.token = token
 
     def arity(self):
-        return 3 # label, position, size
+        return 4 # label, position, size, style
+    
+    def variadic(self):
+        return True
     
     def call(self, interpreter, arguments):
+        if len(arguments) < 3 or len(arguments) > 4:
+            raise FunctionException("Expect at least 3 (max 4) arguments: Text: string, Position: [x, y], Size: [width, height], (style: string !optional).")
         text = arguments[0]
         position = arguments[1]
         size = arguments[2]
+        style = None
+        if len(arguments) == 4:
+            style = arguments[3]
         if not isinstance(position, ForgeArray) or position.length() != 2:
             raise FunctionException("Second argument must be an array of [x, y].", self.name)
         if not isinstance(size, ForgeArray) or size.length() != 2:
             raise FunctionException("Third argument must be an array of [width, height].", self.name)
+        if style and not isinstance(style, str):
+            raise FunctionException("Fourth argument must be a string of the stylesheet.", self.name)
         
         textbox = QLineEdit(self.parent.fields.get("window"))
         textbox.setPlaceholderText(text)
@@ -232,6 +362,8 @@ class AddTextbox(ForgeNative):
             int(position.elements[0]), int(position.elements[1]),
             int(size.elements[0]), int(size.elements[1])
         )
+        if style:
+            textbox.setStyleSheet(style)
         textbox.show()
         return Textbox(textbox)
     
@@ -279,16 +411,26 @@ class AddTextArea(ForgeNative):
         self.token = token
 
     def arity(self):
-        return 3 # label, position, size
+        return 4 # label, position, size, style
+    
+    def variadic(self):
+        return True
     
     def call(self, interpreter, arguments):
+        if len(arguments) < 3 or len(arguments) > 4:
+            raise FunctionException("Expect at least 3 (max 4) arguments: Text: string, Position: [x, y], Size: [width, height], (style: string !optional).")
         text = arguments[0]
         position = arguments[1]
         size = arguments[2]
+        style = None
+        if len(arguments) == 4:
+            style = arguments[3]
         if not isinstance(position, ForgeArray) or position.length() != 2:
             raise FunctionException("Second argument must be an array of [x, y].", self.name)
         if not isinstance(size, ForgeArray) or size.length() != 2:
             raise FunctionException("Third argument must be an array of [width, height].", self.name)
+        if style and not isinstance(style, str):
+            raise FunctionException("Fourth argument must be a string of the stylesheet.", self.name)
         
         textarea = QPlainTextEdit(self.parent.fields.get("window"))
         textarea.setPlaceholderText(text)
@@ -296,6 +438,8 @@ class AddTextArea(ForgeNative):
             int(position.elements[0]), int(position.elements[1]),
             int(size.elements[0]), int(size.elements[1])
         )
+        if style:
+            textarea.setStyleSheet(style)
         textarea.show()
         return TextArea(textarea)
 
@@ -349,18 +493,28 @@ class AddDropdown(ForgeNative):
         self.token = token
 
     def arity(self):
-        return 3  # Options, position, size
+        return 3  # Options, position, size, style
+    
+    def variadic(self):
+        return True
     
     def call(self, interpreter, arguments):
+        if len(arguments) < 3 or len(arguments) > 4:
+            raise FunctionException("Expect at least 3 (max 4) arguments: Options: [items...], Position: [x, y], Size: [width, height], (style: string !optional).")
         options = arguments[0]
         position = arguments[1]
         size = arguments[2]
+        style = None
+        if len(arguments) == 4:
+            style = arguments[3]
         if not isinstance(options, ForgeArray):
             raise FunctionException("First argument must be an array of options.", self.name)
         if not isinstance(position, ForgeArray) or position.length() != 2:
             raise FunctionException("Second argument must be an array of [x, y].", self.name)
         if not isinstance(size, ForgeArray) or size.length() != 2:
             raise FunctionException("Third argument must be an array of [width, height].", self.name)
+        if style and not isinstance(style, str):
+            raise FunctionException("Fourth argument must be a string of the stylesheet.", self.name)
 
         dropdown = QComboBox(self.parent.fields.get("window"))
         dropdown.addItems([str(option) for option in options.elements])
@@ -368,6 +522,8 @@ class AddDropdown(ForgeNative):
             int(position.elements[0]), int(position.elements[1]),
             int(size.elements[0]), int(size.elements[1])
         )
+        if style:
+            dropdown.setStyleSheet(style)
         dropdown.show()
         return Dropdown(dropdown)
 
@@ -421,18 +577,28 @@ class AddListView(ForgeNative):
         self.token = token
 
     def arity(self):
-        return 3  # Items, position, size
+        return 3  # Items, position, size, style
+    
+    def variadic(self):
+        return True
     
     def call(self, interpreter, arguments):
+        if len(arguments) < 3 or len(arguments) > 4:
+            raise FunctionException("Expect at least 3 (max 4) arguments: Options: [items...], Position: [x, y], Size: [width, height], (style: string !optional).")
         items = arguments[0]
         position = arguments[1]
         size = arguments[2]
+        style = None
+        if len(arguments) == 4:
+            style = arguments[3]
         if not isinstance(items, ForgeArray):
             raise FunctionException("First argument must be an array of items.", self.name)
         if not isinstance(position, ForgeArray) or position.length() != 2:
             raise FunctionException("Second argument must be an array of [x, y].", self.name)
         if not isinstance(size, ForgeArray) or size.length() != 2:
             raise FunctionException("Third argument must be an array of [width, height].", self.name)
+        if style and not isinstance(style, str):
+            raise FunctionException("Fourth argument must be a string of the stylesheet.", self.name)
 
         list_view = QListWidget(self.parent.fields.get("window"))
         list_view.addItems([str(item) for item in items.elements])
@@ -440,7 +606,8 @@ class AddListView(ForgeNative):
             int(position.elements[0]), int(position.elements[1]),
             int(size.elements[0]), int(size.elements[1])
         )
-
+        if style:
+            list_view.setStyleSheet(style)
         list_view.show()
         return ListView(list_view)
 
@@ -451,16 +618,32 @@ class ShowDialog(ForgeNative):
         self.token = token
 
     def arity(self):
-        return 2  # Message and Title
+        return 3  # message, title, style
+    
+    def variadic(self):
+        return True
     
     def call(self, interpreter, arguments):
+        if len(arguments) < 2 or len(arguments) > 3:
+            raise FunctionException("Expect at least 2 (max 3) arguments: Message: string, Title: string, (style: string !optional).")
         message = arguments[0]
         title = arguments[1]
-
+        style = None
+        if len(arguments) == 3:
+            style = arguments[2]
+        if not isinstance(message, str):
+            raise FunctionException("First argument must be a string of the message.", self.name)
+        if not isinstance(message, str):
+            raise FunctionException("Second argument must be a string of the title.", self.name)
+        if style and not isinstance(style, str):
+            raise FunctionException("Third argument must be a string of the stylesheet.", self.name)
+        
         dialog = QMessageBox()
         dialog.setText(message)
         dialog.setWindowTitle(title)
         dialog.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+        if style:
+            dialog.setStyleSheet(style)
 
         result = dialog.exec()
         return result == QMessageBox.StandardButton.Ok  # Returns true if "Ok" is clicked

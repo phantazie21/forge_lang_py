@@ -7,12 +7,25 @@ fn onCheckboxChanged(state) {
         out "Checkbox is unchecked!";
     }
 }
+var style = "color: white; background-color: black; font-size: 14px; font-weight: bold;";
+var button_style = "color: yellow; background-color: blue; border-radius: 5px;";
+var label = window.addLabel("Welcome to Forge!", [50, 20], [200, 30], style);
+fn checkLabel() {
+    out label.get();
+}
+fn setLabel() {
+    label.set("kuki");
+}
 
-window.addLabel("Welcome to Forge!", [50, 20], [200, 30]);
-window.addCheckbox("Enable feature", [50, 60], [150, 30], onCheckboxChanged);
-var textbox = window.addTextbox("Enter your name!", [50, 100], [100, 30]);
-var myList = window.addListView(["Item 1", "Item 2", "Item 3"], [50, 140], [100, 100]);
-var dropdown = window.addDropdown(["Option 1", "Option 2", "Option 3"], [50, 250], [150, 30]);
+var button1 = window.addButton("Check label", [290, 20], [150, 30], checkLabel, button_style);
+out button1.getText();
+button1.setText("Button Text override");
+button1.click();
+window.addButton("Set label to 'kuki'", [480, 20], [100, 30], setLabel, button_style);
+window.addCheckbox("Enable feature", [50, 60], [150, 30], onCheckboxChanged, style);
+var textbox = window.addTextbox("Enter your name!", [50, 100], [150, 30], style);
+var myList = window.addListView(["Item 1", "Item 2", "Item 3"], [50, 140], [100, 100], style);
+var dropdown = window.addDropdown(["Option 1", "Option 2", "Option 3"], [50, 250], [150, 30], style);
 
 fn onItemSelected() {
     out "You selected: " + myList.get();
@@ -46,20 +59,20 @@ fn setDropdown() {
     dropdown.set(0);
 }
 
-window.addButton("Check textbox", [190, 100], [100, 30], buttonClicked);
-window.addButton("Set textbox to 'kuki'", [330, 100], [150, 30], setTextbox);
-window.addButton("Check List Item", [50, 290], [100, 30], onItemSelected);
-window.addButton("Set List Item to first", [190, 290], [150, 30], setListView);
-window.addButton("Check Dropdown Item", [50, 330], [150, 30], onDropdownSelected);
-window.addButton("Set Dropdown Item to first", [240, 330], [300, 30], setDropdown);
-window.addButton("Show Dialog", [50, 370], [100, 30], onOkClicked);
-var textArea = window.addTextArea("Enter your code here...", [50, 410], [200, 75]);
+window.addButton("Check textbox", [240, 100], [100, 30], buttonClicked, button_style);
+window.addButton("Set textbox to 'kuki'", [380, 100], [150, 30], setTextbox, button_style);
+window.addButton("Check List Item", [50, 290], [100, 30], onItemSelected, button_style);
+window.addButton("Set List Item to first", [190, 290], [150, 30], setListView, button_style);
+window.addButton("Check Dropdown Item", [50, 330], [150, 30], onDropdownSelected, button_style);
+window.addButton("Set Dropdown Item to first", [240, 330], [300, 30], setDropdown, button_style);
+window.addButton("Show Dialog", [50, 370], [100, 30], onOkClicked, button_style);
+var textArea = window.addTextArea("Enter your code here...", [50, 410], [200, 75], style);
 fn getTextArea() {
     out textArea.get();
 }
 fn setTextArea() {
     textArea.set("kuki");
 }
-window.addButton("Show text area", [50, 495], [150, 30], getTextArea);
-window.addButton("Set text area to 'kuki'", [240, 495], [150, 30], setTextArea);
+window.addButton("Show text area", [50, 495], [150, 30], getTextArea, button_style);
+window.addButton("Set text area to 'kuki'", [240, 495], [150, 30], setTextArea, button_style);
 window.show();
