@@ -4,6 +4,8 @@ from forge_class import ForgeClass
 from forge_instance import ForgeInstance
 from error import FunctionException
 from forge_array import ForgeArray
+from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QCheckBox, QLineEdit, QMessageBox, QComboBox, QListWidget, QPlainTextEdit
+import sys
 
 import math
 import time
@@ -26,7 +28,7 @@ class ForgeNative(ForgeCallable):
     def __str__(self):
         return "<native fn>"
 
-#CLASSES
+#CLASSES AND METHODS
 class SetHashMap(ForgeNative):
     def __init__(self, parent, token):
         self.name = "set"
@@ -77,10 +79,457 @@ class HashMap(ForgeInstance):
         
     def __str__(self):
         return str(self.fields)
+    
+class AddButton(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "addButton"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 4 # text, position, size, callback
+    
+    def call(self, interpreter, arguments):
+        text = arguments[0]
+        position = arguments[1]
+        size = arguments[2]
+        callback = arguments[3]
+        if not isinstance(position, ForgeArray) or position.length() != 2:
+            raise FunctionException("Second argument must be an array of [x, y].", self.name)
+        if not isinstance(size, ForgeArray) or size.length() != 2:
+            raise FunctionException("Third argument must be an array of [width, height].", self.name)
+        if not isinstance(callback, ForgeFunction):
+            raise FunctionException("Fourth argument must be a callable function.", self.name)
         
+        button = QPushButton(text, self.parent.fields.get("window"))
+        button.setGeometry(
+            int(position.elements[0]), int(position.elements[1]),
+            int(size.elements[0]), int(size.elements[1])
+        )
+        button.clicked.connect(lambda: callback.call(interpreter, []))
+        button.show()
 
+class AddLabel(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "addLabel"
+        self.parent = parent
+        self.token = token
 
+    def arity(self):
+        return 3 # text, position, size
+    
+    def call(self, interpreter, arguments):
+        text = arguments[0]
+        position = arguments[1]
+        size = arguments[2]
+        if not isinstance(position, ForgeArray) or position.length() != 2:
+            raise FunctionException("Second argument must be an array of [x, y].", self.name)
+        if not isinstance(size, ForgeArray) or size.length() != 2:
+            raise FunctionException("Third argument must be an array of [width, height].", self.name)
+        
+        label = QLabel(text, self.parent.fields.get("window"))
+        label.setGeometry(
+            int(position.elements[0]), int(position.elements[1]),
+            int(size.elements[0]), int(size.elements[1])
+        )
+        label.show()
+    
+class AddCheckbox(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "addCheckbox"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 4 # label, position, size, callback
+    
+    def variadic(self):
+        return True
+
+    def call(self, interpreter, arguments):
+        if len(arguments) < 3:
+            raise FunctionException('Give at least 3 arguments: Text: str, Position: [x, y], Size: [width, height], (onChange: function !optional).', self.name)
+        text = arguments[0]
+        position = arguments[1]
+        size = arguments[2]
+        callback = None
+        if len(arguments) == 4:
+            callback = arguments[3]
+        if not isinstance(position, ForgeArray) or position.length() != 2:
+            raise FunctionException("Second argument must be an array of [x, y].", self.name)
+        if not isinstance(size, ForgeArray) or size.length() != 2:
+            raise FunctionException("Third argument must be an array of [width, height].", self.name)
+        if callback and not isinstance(callback, ForgeFunction):
+            raise FunctionException("Fourth argument must be a callable function.", self.name)
+        
+        checkbox = QCheckBox(text, self.parent.fields.get("window"))
+        checkbox.setGeometry(
+            int(position.elements[0]), int(position.elements[1]),
+            int(size.elements[0]), int(size.elements[1])
+        )
+        if callback:
+            checkbox.stateChanged.connect(lambda state: callback.call(interpreter, [state]))
+        checkbox.show()
+
+class SetTextbox(ForgeNative):
+    def __init__(self, textbox, _):
+        self.name = "set"
+        self.textbox = textbox
+    
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        if not isinstance(arguments[0], str):
+            raise FunctionException("Expect type 'string'.", self.name)
+        self.textbox.fields.get("textbox").setText(arguments[0])
+
+class GetTextbox(ForgeNative):
+    def __init__(self, textbox, _):
+        self.name = "get"
+        self.textbox = textbox
+    
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        return self.textbox.fields.get("textbox").text()
+
+class Textbox(ForgeInstance):
+    name = "Textbox"
+    def __init__(self, textbox):
+        self._class = Textbox
+        self.fields = {"textbox": textbox}
+        self.methods = {"set": SetTextbox, "get": GetTextbox}
+
+    def get(self, name):
+        try:
+            return self.methods[name.lexeme](self, name)  # type: ignore
+        except KeyError:
+            raise FunctionException(f"Undefined method.", name.lexeme)
+
+class AddTextbox(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "addTextbox"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 3 # label, position, size
+    
+    def call(self, interpreter, arguments):
+        text = arguments[0]
+        position = arguments[1]
+        size = arguments[2]
+        if not isinstance(position, ForgeArray) or position.length() != 2:
+            raise FunctionException("Second argument must be an array of [x, y].", self.name)
+        if not isinstance(size, ForgeArray) or size.length() != 2:
+            raise FunctionException("Third argument must be an array of [width, height].", self.name)
+        
+        textbox = QLineEdit(self.parent.fields.get("window"))
+        textbox.setPlaceholderText(text)
+        textbox.setGeometry(
+            int(position.elements[0]), int(position.elements[1]),
+            int(size.elements[0]), int(size.elements[1])
+        )
+        textbox.show()
+        return Textbox(textbox)
+    
+class GetTextArea(ForgeNative):
+    def __init__(self, textarea, _):
+        self.name = "getTextArea"
+        self.textarea = textarea
+
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        return self.textarea.fields.get("textarea").toPlainText()
+    
+class SetTextArea(ForgeNative):
+    def __init__(self, textarea, _):
+        self.name = "setTextArea"
+        self.textarea = textarea
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        if not isinstance(arguments[0], str):
+            raise FunctionException("Expect type 'string'.", self.name)
+        return self.textarea.fields.get("textarea").setPlainText(arguments[0])
+
+class TextArea(ForgeInstance):
+    name = "TextArea"
+    def __init__(self, textarea):
+        self._class = TextArea
+        self.fields = {"textarea": textarea}
+        self.methods = {"get": GetTextArea, "set": SetTextArea}
+
+    def get(self, name):
+        try:
+            return self.methods[name.lexeme](self, name)  # type: ignore
+        except KeyError:
+            raise FunctionException(f"Undefined method.", name.lexeme)
+
+class AddTextArea(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "addTextArea"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 3 # label, position, size
+    
+    def call(self, interpreter, arguments):
+        text = arguments[0]
+        position = arguments[1]
+        size = arguments[2]
+        if not isinstance(position, ForgeArray) or position.length() != 2:
+            raise FunctionException("Second argument must be an array of [x, y].", self.name)
+        if not isinstance(size, ForgeArray) or size.length() != 2:
+            raise FunctionException("Third argument must be an array of [width, height].", self.name)
+        
+        textarea = QPlainTextEdit(self.parent.fields.get("window"))
+        textarea.setPlaceholderText(text)
+        textarea.setGeometry(
+            int(position.elements[0]), int(position.elements[1]),
+            int(size.elements[0]), int(size.elements[1])
+        )
+        textarea.show()
+        return TextArea(textarea)
+
+class GetDropdown(ForgeNative):
+    def __init__(self, dropdown, _):
+        self.name = "getDropdown"
+        self.dropdown = dropdown
+
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        return self.dropdown.fields.get("dropdown").currentText()
+    
+class SetDropdown(ForgeNative):
+    def __init__(self, dropdown, _):
+        self.name = "setDropdown"
+        self.dropdown = dropdown
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        if isinstance(arguments[0], str):
+            index = self.dropdown.fields.get("dropdown").findText(arguments[0])
+            if index:
+                self.dropdown.fields.get("dropdown").setCurrentIndex(index)
+        elif isinstance(arguments[0], float):
+            index = int(arguments[0])
+            self.dropdown.fields.get("dropdown").setCurrentIndex(index)
+        else:
+            raise FunctionException("Expect type 'string' for value, or 'int' for index.", self.name)
+        
+class Dropdown(ForgeInstance):
+    name = "Dropdown"
+    def __init__(self, dropdown):
+        self._class = Dropdown
+        self.fields = {"dropdown": dropdown}
+        self.methods = {"get": GetDropdown, "set": SetDropdown}
+
+    def get(self, name):
+        try:
+            return self.methods[name.lexeme](self, name)  # type: ignore
+        except KeyError:
+            raise FunctionException(f"Undefined method.", name.lexeme)
+
+class AddDropdown(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "addDropdown"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 3  # Options, position, size
+    
+    def call(self, interpreter, arguments):
+        options = arguments[0]
+        position = arguments[1]
+        size = arguments[2]
+        if not isinstance(options, ForgeArray):
+            raise FunctionException("First argument must be an array of options.", self.name)
+        if not isinstance(position, ForgeArray) or position.length() != 2:
+            raise FunctionException("Second argument must be an array of [x, y].", self.name)
+        if not isinstance(size, ForgeArray) or size.length() != 2:
+            raise FunctionException("Third argument must be an array of [width, height].", self.name)
+
+        dropdown = QComboBox(self.parent.fields.get("window"))
+        dropdown.addItems([str(option) for option in options.elements])
+        dropdown.setGeometry(
+            int(position.elements[0]), int(position.elements[1]),
+            int(size.elements[0]), int(size.elements[1])
+        )
+        dropdown.show()
+        return Dropdown(dropdown)
+
+class GetListView(ForgeNative):
+    def __init__(self, listview, _):
+        self.name = "getListView"
+        self.listview = listview
+
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        if self.listview.fields.get("listview").currentItem():
+            return self.listview.fields.get("listview").currentItem().text()
+        return ""
+
+class SetListView(ForgeNative):
+    def __init__(self, listview, _):
+        self.name = "setListView"
+        self.listview = listview
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        if isinstance(arguments[0], str):
+            x = self.listview.fields.get("listview").findItems(arguments[0])
+            if x:
+                self.listview.fields.get("listview").setCurrentItem(x)
+        elif isinstance(arguments[0], float):
+            index = int(arguments[0])
+            self.listview.fields.get("listview").setCurrentRow(index)
+
+class ListView(ForgeInstance):
+    name = "ListView"
+    def __init__(self, listview):
+        self._class = ListView
+        self.fields = {"listview": listview}
+        self.methods = {"get": GetListView, "set": SetListView}
+
+    def get(self, name):
+        try:
+            return self.methods[name.lexeme](self, name)  # type: ignore
+        except KeyError:
+            raise FunctionException(f"Undefined method.", name.lexeme)
+
+class AddListView(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "addListView"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 3  # Items, position, size
+    
+    def call(self, interpreter, arguments):
+        items = arguments[0]
+        position = arguments[1]
+        size = arguments[2]
+        if not isinstance(items, ForgeArray):
+            raise FunctionException("First argument must be an array of items.", self.name)
+        if not isinstance(position, ForgeArray) or position.length() != 2:
+            raise FunctionException("Second argument must be an array of [x, y].", self.name)
+        if not isinstance(size, ForgeArray) or size.length() != 2:
+            raise FunctionException("Third argument must be an array of [width, height].", self.name)
+
+        list_view = QListWidget(self.parent.fields.get("window"))
+        list_view.addItems([str(item) for item in items.elements])
+        list_view.setGeometry(
+            int(position.elements[0]), int(position.elements[1]),
+            int(size.elements[0]), int(size.elements[1])
+        )
+
+        list_view.show()
+        return ListView(list_view)
+
+class ShowDialog(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "showDialog"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 2  # Message and Title
+    
+    def call(self, interpreter, arguments):
+        message = arguments[0]
+        title = arguments[1]
+
+        dialog = QMessageBox()
+        dialog.setText(message)
+        dialog.setWindowTitle(title)
+        dialog.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+
+        result = dialog.exec()
+        return result == QMessageBox.StandardButton.Ok  # Returns true if "Ok" is clicked
+
+class ShowWindow(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "show"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        self.parent.fields.get("window").show()
+        self.parent.fields.get("app").exec()
+
+class Window(ForgeInstance):
+    name = "Window"
+    def __init__(self, width, height, title):
+        self._class = Window
+        self.fields = {"app": QApplication(sys.argv), "window": QWidget()}
+        self.fields.get("window").setWindowTitle(title)
+        self.fields.get("window").resize(width, height)
+        self.methods = {
+            "addButton": AddButton, 
+            "addLabel": AddLabel, 
+            "addCheckbox": AddCheckbox, 
+            "addTextbox": AddTextbox,
+            "addTextArea": AddTextArea,
+            "addDropdown": AddDropdown,
+            "addListView": AddListView,
+            "showDialog": ShowDialog,
+            "show": ShowWindow
+            }
+
+    def get(self, name):
+        try:
+            return self.methods[name.lexeme](self, name)  # type: ignore
+        except KeyError:
+            raise FunctionException(f"Undefined method.", name.lexeme)
+    
 #FUNCTIONS
+class SpawnWindow(ForgeNative):
+    def __init__(self):
+        self.name = "window"
+
+    def arity(self):
+        return 0
+    
+    def variadic(self):
+        return True
+    
+    def call(self, interpreter, arguments):
+        width = 500
+        height = 500
+        title = "Forge App"
+        if len(arguments) > 0:
+            if not isinstance(arguments[0], ForgeArray) or arguments[0].length() != 2:
+                raise FunctionException("First argument must be an array of [width, height].", self.name)
+            dims = arguments[0]
+            width = int(dims.elements[0])
+            height = int(dims.elements[1])
+        if len(arguments) > 1:
+            if not isinstance(arguments[1], str):
+                raise FunctionException("Second argument must be a string.", self.name)
+            title = arguments[1]
+        return Window(width, height, title)
+
 class Hash(ForgeNative):
     def __init__(self):
         self.name = "hashMap"
@@ -457,5 +906,5 @@ class Sign(MathFunction):
             return -1
         return 0
 
-nativeFunctions = [Hash, Clock, GetLine, Type, Now, ToString, ToUpper, ToLower, ToNumber, ToArray, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, WriteToFile, ReadFile, ClearFile, CreateFile]
+nativeFunctions = [SpawnWindow, Hash, Clock, GetLine, Type, Now, ToString, ToUpper, ToLower, ToNumber, ToArray, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, WriteToFile, ReadFile, ClearFile, CreateFile]
 nativeGlobals = {"PI": math.pi, "E": math.e}

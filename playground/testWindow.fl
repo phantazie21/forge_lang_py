@@ -1,0 +1,65 @@
+var window = window([800, 600], "First Forge App");
+
+fn onCheckboxChanged(state) {
+    if (state == 2) {
+        out "Checkbox is checked!";
+    } else {
+        out "Checkbox is unchecked!";
+    }
+}
+
+window.addLabel("Welcome to Forge!", [50, 20], [200, 30]);
+window.addCheckbox("Enable feature", [50, 60], [150, 30], onCheckboxChanged);
+var textbox = window.addTextbox("Enter your name!", [50, 100], [100, 30]);
+var myList = window.addListView(["Item 1", "Item 2", "Item 3"], [50, 140], [100, 100]);
+var dropdown = window.addDropdown(["Option 1", "Option 2", "Option 3"], [50, 250], [150, 30]);
+
+fn onItemSelected() {
+    out "You selected: " + myList.get();
+}
+
+fn onDropdownSelected() {
+    out "You selected from dropdown: " + dropdown.get();
+}
+
+fn buttonClicked() {
+    out "You entered: " + textbox.get();
+}
+
+fn onOkClicked() {
+    if (window.showDialog("Are you sure?", "Confirmation")) {
+        out "Confirmed!";
+    } else {
+        out "Cancelled!";
+    }
+}
+
+fn setTextbox() {
+    textbox.set("kuki");
+}
+
+fn setListView() {
+    myList.set(0);
+}
+
+fn setDropdown() {
+    dropdown.set(0);
+}
+
+window.addButton("Check textbox", [190, 100], [100, 30], buttonClicked);
+window.addButton("Set textbox to 'kuki'", [330, 100], [150, 30], setTextbox);
+window.addButton("Check List Item", [50, 290], [100, 30], onItemSelected);
+window.addButton("Set List Item to first", [190, 290], [150, 30], setListView);
+window.addButton("Check Dropdown Item", [50, 330], [150, 30], onDropdownSelected);
+window.addButton("Set Dropdown Item to first", [240, 330], [300, 30], setDropdown);
+window.addButton("Show Dialog", [50, 370], [100, 30], onOkClicked);
+var textArea = window.addTextArea("Enter your code here...", [50, 410], [200, 75]);
+fn getTextArea() {
+    out textArea.get();
+}
+fn setTextArea() {
+    textArea.set("kuki");
+}
+window.addButton("Show text area", [50, 495], [150, 30], getTextArea);
+window.addButton("Set text area to 'kuki'", [240, 495], [150, 30], setTextArea);
+window.show();
