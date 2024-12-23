@@ -4,7 +4,7 @@ fn fib(n) {
     if (n < 2) {
         return n;
     }
-    if (cache.get(n)) {
+    if (cache.containsKey(n)) {
         return cache.get(n);
     }
     var res = fib(n - 1) + fib(n - 2);
@@ -15,3 +15,8 @@ fn fib(n) {
 var time = clock();
 fib(30);
 out "Time: " + (clock() - time) * 1000 + " ms";
+out cache;
+cache.removeValue(1);
+out cache;
+cache.remove(3);
+out cache;

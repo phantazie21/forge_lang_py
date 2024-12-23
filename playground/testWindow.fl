@@ -1,4 +1,4 @@
-var window = window([800, 600], "First Forge App");
+var window = window([800, 600], "First Forge App", "C:\Users\phanta\Downloads\Notepad.jpg");
 
 fn onCheckboxChanged(state) {
     if (state == 2) {
@@ -75,4 +75,15 @@ fn setTextArea() {
 }
 window.addButton("Show text area", [50, 495], [150, 30], getTextArea, button_style);
 window.addButton("Set text area to 'kuki'", [240, 495], [150, 30], setTextArea, button_style);
+var random = random();
+var colors = ["red", "blue", "green", "black", "white", "pink"];
+fn callback() {
+    button1.setPos([button1.getPos()[0] + 1, button1.getPos()[1] + 1]);
+    //button1.setSize([max(button1.getSize()[0] - 1, 10), max(button1.getSize()[1] - 1, 10)]);
+    var val = random.int(0, 100);
+    button1.setSize([val, val]);
+    button1.setStyle(button1.getStyle() + "background-color: " + random.choice(colors) + ";");
+}
+var timer = window.addTimer(16.67, callback);
+//window.setFullscreen(true);
 window.show();

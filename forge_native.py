@@ -5,8 +5,13 @@ from forge_instance import ForgeInstance
 from error import FunctionException
 from forge_array import ForgeArray
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QCheckBox, QLineEdit, QMessageBox, QComboBox, QListWidget, QPlainTextEdit
-import sys
+from PyQt6.QtCore import QElapsedTimer, QThread, pyqtSignal
+from PyQt6.QtGui import QIcon
+from preprocessor import HEADERS
 
+import random
+import ctypes
+import sys
 import math
 import time
 from pathlib import Path
@@ -50,7 +55,7 @@ class SetHashMap(ForgeNative):
                 self.parent.fields[arguments[0]] = arguments[1]
                 return arguments[1]
             except TypeError:
-                raise FunctionException(f"Undefined property '{arguments[0]}'.", "set")
+                raise FunctionException(f"Undefined property '{arguments[0]}'.", self.name)
             
 class GetHashMap(ForgeNative):
     def __init__(self, parent, token):
@@ -62,14 +67,71 @@ class GetHashMap(ForgeNative):
         return 1
     
     def call(self, interpreter, arguments):
-        return self.parent.fields.get(arguments[0]) or self.parent.fields.get(str(arguments[0]))
+        return self.parent.fields.get(arguments[0])# or self.parent.fields.get(str(arguments[0]))
+    
+class RemoveHashMap(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "remove"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        try:
+            return self.parent.fields.pop(arguments[0])
+        except Exception:
+            raise FunctionException("Key is not in Hashmap.", self.name)
+
+class RemoveValueHashMap(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "removeValue"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        try:
+            new_dict = {key: value for key, value in self.parent.fields.items()
+                if value != arguments[0]}
+            self.parent.fields = new_dict
+            return self.parent.fields
+        except Exception:
+            raise FunctionException("Key is not in Hashmap.", self.name)
+
+class ContainsKeyHashMap(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "containsKey"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        return arguments[0] in self.parent.fields.keys()
+    
+class ContainsValueHashMap(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "containsValue"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        return arguments[0] in self.parent.fields.values()
 
 class HashMap(ForgeInstance):
     name = "HashMap"
     def __init__(self):
         self._class = HashMap
         self.fields = {}
-        self.methods = {"set": SetHashMap, "get": GetHashMap}
+        self.methods = {"set": SetHashMap, "get": GetHashMap, "remove": RemoveHashMap, "removeValue": RemoveValueHashMap, "containsKey": ContainsKeyHashMap, "containsValue": ContainsValueHashMap}
 
     def get(self, name):
         try:
@@ -80,6 +142,87 @@ class HashMap(ForgeInstance):
     def __str__(self):
         return str(self.fields)
     
+class RandomInt(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "int"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 2
+    
+    def variadic(self):
+        return True
+    
+    def call(self, interpreter, arguments):
+        if len(arguments) > 2:
+            raise FunctionException("Expect max 2 arguments: (min: num !optional), (max: num !optional).", self.name)
+        _min = 0
+        _max = 0
+        if len(arguments) > 0:
+            if not isinstance(arguments[0], float):
+                raise FunctionException("First argument must be 'num', the minimum of random (inclusive).")
+            _min = int(arguments[0])
+        if len(arguments) > 1:
+            if not isinstance(arguments[1], float):
+                raise FunctionException("Second argument must be 'num', the maximum of random (inclusive).")
+            _max = int(arguments[1])
+        return random.randint(_min, _max)
+    
+class RandomNum(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "num"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 2
+    
+    def variadic(self):
+        return True
+    
+    def call(self, interpreter, arguments):
+        if len(arguments) > 2:
+            raise FunctionException("Expect max 2 arguments: (min: num !optional), (max: num !optional).", self.name)
+        _min = 0
+        _max = 0
+        if len(arguments) > 0:
+            if not isinstance(arguments[0], float):
+                raise FunctionException("First argument must be 'num', the minimum of random (inclusive).")
+            _min = arguments[0]
+        if len(arguments) > 1:
+            if not isinstance(arguments[1], float):
+                raise FunctionException("Second argument must be 'num', the maximum of random (inclusive).")
+            _max = arguments[1]
+        return random.uniform(_min, _max)
+    
+class RandomChoice(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "choice"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        if not isinstance(arguments[0], ForgeArray):
+            raise FunctionException("First argument must be 'array', the array the method returns a random element from.", self.name)
+        return random.choice(arguments[0].elements)
+
+class Random(ForgeInstance):
+    name = "Random"
+    def __init__(self):
+        self._class = Random
+        self.fields = {}
+        self.methods = {"int": RandomInt, "num": RandomNum, "choice": RandomChoice}
+
+    def get(self, name):
+        try:
+            return self.methods[name.lexeme](self, name)  # type: ignore
+        except KeyError:
+            raise FunctionException(f"Undefined method.", name.lexeme)
+
 class SetButton(ForgeNative):
     def __init__(self, button, _):
         self.name = "setText"
@@ -114,13 +257,102 @@ class ClickButton(ForgeNative):
     
     def call(self, interpreter, arguments):
         return self.button.fields.get("button").click()
+    
+class SetPos(ForgeNative):
+    def __init__(self, parent, _):
+        self.name = "setPos"
+        self.parent = parent
+    
+    def arity(self):
+        return 1 # [x, y]
+    
+    def call(self, interpreter, arguments):
+        dims = arguments[0]
+        if not isinstance(dims, ForgeArray) or dims.length() != 2:
+            raise FunctionException("Argument must be array of position [x, y].", self.name)
+        x = 0
+        y = 0
+        try:
+            x = int(dims.elements[0])
+            y = int(dims.elements[1])
+        except Exception:
+            raise FunctionException("Elements of array must be numbers.", self.name)
+        self.parent.fields.get(self.parent.name.lower()).move(x, y)
+
+class GetPos(ForgeNative):
+    def __init__(self, parent, _):
+        self.name = "getPos"
+        self.parent = parent
+    
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        return ForgeArray([self.parent.fields.get(self.parent.name.lower()).x(), self.parent.fields.get(self.parent.name.lower()).y()])
+    
+class GetStyle(ForgeNative):
+    def __init__(self, parent, _):
+        self.name = "getStyle"
+        self.parent = parent
+    
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        return self.parent.fields.get(self.parent.name.lower()).styleSheet()
+
+class SetStyle(ForgeNative):
+    def __init__(self, parent, _):
+        self.name = "setStyle"
+        self.parent = parent
+    
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        if not isinstance(arguments[0], str):
+            raise FunctionException("First argument must be a string.", self.name)
+        self.parent.fields.get(self.parent.name.lower()).setStyleSheet(arguments[0])
+
+class GetSize(ForgeNative):
+    def __init__(self, parent, _):
+        self.name = "getSize"
+        self.parent = parent
+    
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        return ForgeArray([self.parent.fields.get(self.parent.name.lower()).width(), self.parent.fields.get(self.parent.name.lower()).height()])
+
+class SetSize(ForgeNative):
+    def __init__(self, parent, _):
+        self.name = "setSize"
+        self.parent = parent
+    
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        if not isinstance(arguments[0], ForgeArray):
+            raise FunctionException("First argument must be an array of [width, height].", self.name)
+        dims = arguments[0]
+        width = 0
+        height = 0
+        try:
+            width = int(dims.elements[0])
+            height = int(dims.elements[1])
+        except Exception:
+            raise FunctionException("Elements of array must be numbers.", self.name)
+        
+        self.parent.fields.get(self.parent.name.lower()).resize(width, height)
 
 class Button(ForgeInstance):
     name = "Button"
     def __init__(self, button):
-        self._class = button
+        self._class = Button
         self.fields = {"button": button}
-        self.methods = {"setText": SetButton, "getText": GetButton, "click": ClickButton}
+        self.methods = {"setText": SetButton, "getText": GetButton, "click": ClickButton, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize}
 
     def get(self, name):
         try:
@@ -200,7 +432,7 @@ class Label(ForgeInstance):
     def __init__(self, label):
         self._class = Label
         self.fields = {"label": label}
-        self.methods = {"set": SetLabel, "get": GetLabel}
+        self.methods = {"set": SetLabel, "get": GetLabel, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize}
 
     def get(self, name):
         try:
@@ -320,7 +552,7 @@ class Textbox(ForgeInstance):
     def __init__(self, textbox):
         self._class = Textbox
         self.fields = {"textbox": textbox}
-        self.methods = {"set": SetTextbox, "get": GetTextbox}
+        self.methods = {"set": SetTextbox, "get": GetTextbox, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize}
 
     def get(self, name):
         try:
@@ -396,7 +628,7 @@ class TextArea(ForgeInstance):
     def __init__(self, textarea):
         self._class = TextArea
         self.fields = {"textarea": textarea}
-        self.methods = {"get": GetTextArea, "set": SetTextArea}
+        self.methods = {"get": GetTextArea, "set": SetTextArea, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize}
 
     def get(self, name):
         try:
@@ -478,7 +710,7 @@ class Dropdown(ForgeInstance):
     def __init__(self, dropdown):
         self._class = Dropdown
         self.fields = {"dropdown": dropdown}
-        self.methods = {"get": GetDropdown, "set": SetDropdown}
+        self.methods = {"get": GetDropdown, "set": SetDropdown, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize}
 
     def get(self, name):
         try:
@@ -562,7 +794,7 @@ class ListView(ForgeInstance):
     def __init__(self, listview):
         self._class = ListView
         self.fields = {"listview": listview}
-        self.methods = {"get": GetListView, "set": SetListView}
+        self.methods = {"get": GetListView, "set": SetListView, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize}
 
     def get(self, name):
         try:
@@ -661,13 +893,115 @@ class ShowWindow(ForgeNative):
         self.parent.fields.get("window").show()
         self.parent.fields.get("app").exec()
 
+class TimerThread(QThread):
+    timeout = pyqtSignal()  # Custom signal to trigger the callback
+
+    def __init__(self, interval_ms):
+        super().__init__()
+        self.interval_ms = interval_ms
+        self.running = False
+
+    def run(self):
+        self.running = True
+        timer = QElapsedTimer()
+        timer.start()
+
+        while self.running:
+            elapsed = timer.elapsed()  # Time in ms
+            if elapsed >= self.interval_ms:
+                self.timeout.emit()  # Trigger the callback
+                timer.restart()  # Reset timer
+
+            # Sleep briefly to reduce CPU usage
+            time.sleep(0.001)
+
+    def stop(self):
+        self.running = False
+        self.wait()
+
+
+class StartTimer(ForgeNative):
+    def __init__(self, timer, _):
+        self.name = "start"
+        self.timer = timer
+
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        self.timer.fields.get("timer").run()
+
+class StopTimer(ForgeNative):
+    def __init__(self, timer, _):
+        self.name = "stop"
+        self.timer = timer
+
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        self.timer.fields.get("timer").stop()
+
+class Timer(ForgeInstance):
+    name = "Timer"
+    def __init__(self, timer):
+        self._class = Timer
+        self.fields = {"timer": timer}
+        self.methods = {"start": StartTimer}
+
+    def get(self, name):
+        try:
+            return self.methods[name.lexeme](self, name)  # type: ignore
+        except KeyError:
+            raise FunctionException(f"Undefined method.", name.lexeme)
+
+class AddTimer(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "addTimer"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 2 # interval, callback
+    
+    def call(self, interpreter, arguments):
+        if not isinstance(arguments[0], float):
+            raise FunctionException("First argument must be number type (interval in msec).", self.name)
+        if not isinstance(arguments[1], ForgeFunction):
+            raise FunctionException("Second argument must be a callable function.", self.name)
+        interval_ms = int(arguments[0])
+        callback = arguments[1]
+        timer = TimerThread(interval_ms)
+        timer.timeout.connect(lambda: callback.call(interpreter, []))
+        timer.start()
+        return Timer(timer)
+
+class SetFullscreen(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "setFullscreen"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 1 # isFullscreen
+    
+    def call(self, interpreter, arguments):
+        if not isinstance(arguments[0], bool):
+            raise FunctionException("First argument must be bool type.", self.name)
+        if arguments[0] == True:
+            self.parent.fields.get("window").showFullScreen()
+
 class Window(ForgeInstance):
     name = "Window"
-    def __init__(self, width, height, title):
+    def __init__(self, width, height, title, logo):
         self._class = Window
         self.fields = {"app": QApplication(sys.argv), "window": QWidget()}
         self.fields.get("window").setWindowTitle(title)
         self.fields.get("window").resize(width, height)
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(title)
+        self.fields.get("window").setWindowIcon(QIcon(f"{HEADERS}/FL.png"))
+        if logo:
+            self.fields.get("window").setWindowIcon(QIcon(logo))
         self.methods = {
             "addButton": AddButton, 
             "addLabel": AddLabel, 
@@ -677,7 +1011,9 @@ class Window(ForgeInstance):
             "addDropdown": AddDropdown,
             "addListView": AddListView,
             "showDialog": ShowDialog,
-            "show": ShowWindow
+            "addTimer": AddTimer,
+            "show": ShowWindow,
+            "setFullscreen": SetFullscreen
             }
 
     def get(self, name):
@@ -687,6 +1023,16 @@ class Window(ForgeInstance):
             raise FunctionException(f"Undefined method.", name.lexeme)
     
 #FUNCTIONS
+class SpawnRandom(ForgeNative):
+    def __init__(self):
+        self.name = "random"
+
+    def arity(self):
+        return 0
+
+    def call(self, interpreter, _):
+        return Random()
+
 class SpawnWindow(ForgeNative):
     def __init__(self):
         self.name = "window"
@@ -701,17 +1047,27 @@ class SpawnWindow(ForgeNative):
         width = 500
         height = 500
         title = "Forge App"
+        logo = None
+        if len(arguments) > 3:
+            raise FunctionException("Expect at least 0 (max 3) arguments: [width, height]: array, Title: string, logoURL: string")
         if len(arguments) > 0:
             if not isinstance(arguments[0], ForgeArray) or arguments[0].length() != 2:
                 raise FunctionException("First argument must be an array of [width, height].", self.name)
             dims = arguments[0]
-            width = int(dims.elements[0])
-            height = int(dims.elements[1])
+            try:
+                width = int(dims.elements[0])
+                height = int(dims.elements[1])
+            except Exception:
+                raise FunctionException("Elements of array must be numbers.", self.name)
         if len(arguments) > 1:
             if not isinstance(arguments[1], str):
                 raise FunctionException("Second argument must be a string.", self.name)
             title = arguments[1]
-        return Window(width, height, title)
+        if len(arguments) > 2:
+            if not isinstance(arguments[2], str):
+                raise FunctionException("Third argument must be a string.", self.name)
+            logo = arguments[2]
+        return Window(width, height, title, logo)
 
 class Hash(ForgeNative):
     def __init__(self):
@@ -1088,6 +1444,30 @@ class Sign(MathFunction):
         elif obj < 0:
             return -1
         return 0
+    
+class Min(MathFunction):
+    def __init__(self):
+        self.name = "min"
 
-nativeFunctions = [SpawnWindow, Hash, Clock, GetLine, Type, Now, ToString, ToUpper, ToLower, ToNumber, ToArray, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, WriteToFile, ReadFile, ClearFile, CreateFile]
+    def arity(self):
+        return 2
+
+    def call(self, interpreter, arguments):
+        obj = self.check_number(arguments[0])
+        obj2 = self.check_number(arguments[1])
+        return min(obj, obj2)
+    
+class Max(MathFunction):
+    def __init__(self):
+        self.name = "max"
+
+    def arity(self):
+        return 2
+    
+    def call(self, interpreter, arguments):
+        obj = self.check_number(arguments[0])
+        obj2 = self.check_number(arguments[1])
+        return max(obj, obj2)
+
+nativeFunctions = [SpawnRandom, SpawnWindow, Hash, Clock, GetLine, Type, Now, ToString, ToUpper, ToLower, ToNumber, ToArray, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, Min, Max, WriteToFile, ReadFile, ClearFile, CreateFile]
 nativeGlobals = {"PI": math.pi, "E": math.e}
