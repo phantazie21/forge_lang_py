@@ -40,7 +40,7 @@ class RemoveAt(ForgeCallable):
         try:
             if len(self.array.elements) == 0:
                 raise Exception("Array is empty.")
-            if not isinstance(arguments[0], float):
+            if not isinstance(arguments[0], float) or not isinstance(arguments[0], int):
                 raise TypeError()
             arguments[0] = math.floor(arguments[0])
             if arguments[0] >= len(self.array.elements):
@@ -178,7 +178,7 @@ class ForgeArray(ForgeIndexable):
         return len(self.elements)
 
     def indexToInteger(self, token, index):
-        if isinstance(index, float):
+        if isinstance(index, float) or isinstance(index, int):
             return math.floor(index)
         else:
             raise RuntimeException("Index must be a number.", token)

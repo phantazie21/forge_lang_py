@@ -48,54 +48,57 @@ class Interpreter:
     def visitBinary(self, binary):
         left = self.evaluate(binary.expr_left)
         right = self.evaluate(binary.expr_right)
-        if binary.operator.tokenType == TokenType.PLUS:
-            if isinstance(left, str) or isinstance(right, str):
-                if isinstance(left, str) and isinstance(right, str):
-                    return left + right
-                if isinstance(right, str):
-                    return self.stringify(left) + right
-                if isinstance(left, str):
-                    return left + self.stringify(right)
+        try:
+            if binary.operator.tokenType == TokenType.PLUS:
+                if isinstance(left, str) or isinstance(right, str):
+                    if isinstance(left, str) and isinstance(right, str):
+                        return left + right
+                    if isinstance(right, str):
+                        return self.stringify(left) + right
+                    if isinstance(left, str):
+                        return left + self.stringify(right)
 
-            self.checkNumberOperands(binary.operator, left, right)
-            return left + right
-        elif binary.operator.tokenType == TokenType.MINUS:
-            self.checkNumberOperands(binary.operator, left, right)
-            return left - right
-        elif binary.operator.tokenType == TokenType.STAR:
-            if isinstance(left, str) and isinstance(right, float):
-                return left * math.floor(right)
-            if isinstance(left, float) and isinstance(right, str):
-                return math.floor(left) * right
-            if isinstance(left, ForgeArray) and isinstance(right, float):
-                return ForgeArray(left.elements * math.floor(right))
-            if isinstance(left, float) and isinstance(right, ForgeArray):
-                return ForgeArray(right.elements * math.floor(left))
-            self.checkNumberOperands(binary.operator, left, right)
-            return left * right
-        elif binary.operator.tokenType == TokenType.SLASH:
-            self.checkNumberOperands(binary.operator, left, right)
-            return left / right
-        elif binary.operator.tokenType == TokenType.MODULO:
-            self.checkNumberOperands(binary.operator, left, right)
-            return left % right
-        elif binary.operator.tokenType == TokenType.GREATER:
-            self.checkNumberOperands(binary.operator, left, right)
-            return left > right
-        elif binary.operator.tokenType == TokenType.GREATER_EQUAL:
-            self.checkNumberOperands(binary.operator, left, right)
-            return left >= right
-        elif binary.operator.tokenType == TokenType.LESS:
-            self.checkNumberOperands(binary.operator, left, right)
-            return left < right
-        elif binary.operator.tokenType == TokenType.LESS_EQUAL:
-            self.checkNumberOperands(binary.operator, left, right)
-            return left <= right
-        elif binary.operator.tokenType == TokenType.EQUAL_EQUAL:
-            return left == right
-        elif binary.operator.tokenType == TokenType.BANG_EQUAL:
-            return left != right
-        return None
+                self.checkNumberOperands(binary.operator, left, right)
+                return left + right
+            elif binary.operator.tokenType == TokenType.MINUS:
+                self.checkNumberOperands(binary.operator, left, right)
+                return left - right
+            elif binary.operator.tokenType == TokenType.STAR:
+                if isinstance(left, str) and isinstance(right, float):
+                    return left * math.floor(right)
+                if isinstance(left, float) and isinstance(right, str):
+                    return math.floor(left) * right
+                if isinstance(left, ForgeArray) and isinstance(right, float):
+                    return ForgeArray(left.elements * math.floor(right))
+                if isinstance(left, float) and isinstance(right, ForgeArray):
+                    return ForgeArray(right.elements * math.floor(left))
+                self.checkNumberOperands(binary.operator, left, right)
+                return left * right
+            elif binary.operator.tokenType == TokenType.SLASH:
+                self.checkNumberOperands(binary.operator, left, right)
+                return left / right
+            elif binary.operator.tokenType == TokenType.MODULO:
+                self.checkNumberOperands(binary.operator, left, right)
+                return left % right
+            elif binary.operator.tokenType == TokenType.GREATER:
+                self.checkNumberOperands(binary.operator, left, right)
+                return left > right
+            elif binary.operator.tokenType == TokenType.GREATER_EQUAL:
+                self.checkNumberOperands(binary.operator, left, right)
+                return left >= right
+            elif binary.operator.tokenType == TokenType.LESS:
+                self.checkNumberOperands(binary.operator, left, right)
+                return left < right
+            elif binary.operator.tokenType == TokenType.LESS_EQUAL:
+                self.checkNumberOperands(binary.operator, left, right)
+                return left <= right
+            elif binary.operator.tokenType == TokenType.EQUAL_EQUAL:
+                return left == right
+            elif binary.operator.tokenType == TokenType.BANG_EQUAL:
+                return left != right
+            return None
+        except RuntimeException as e:
+            runtimeError(e)
 
     def isTruthy(self, obj):
         if obj == None:

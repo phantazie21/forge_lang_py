@@ -398,7 +398,10 @@ class AddButton(ForgeNative):
         )
         if style:
             button.setStyleSheet(style)
-        button.clicked.connect(lambda: callback.call(interpreter, []))
+        args = []
+        if callback.arity() > 0:
+            args.append(Button(button))
+        button.clicked.connect(lambda: callback.call(interpreter, args))
         button.show()
 
         return Button(button)
@@ -1111,7 +1114,7 @@ class Type(ForgeNative):
 
         if isinstance(obj, bool):
             return "boolean"
-        elif isinstance(obj, float):
+        elif isinstance(obj, float) or isinstance(obj, int):
             return "number"
         elif isinstance(obj, str):
             return "string"
@@ -1288,6 +1291,27 @@ class CreateFile(ForgeNative):
                 open(lib_path, "w").close()
             except Exception as e:
                 raise FunctionException(e, self.name)
+
+class Exit(ForgeNative):
+    def __init__(self):
+        self.name = "exit"
+
+    def arity(self):
+        return 1
+    
+    def variadic(self):
+        return True
+    
+    def call(self, interpreter, arguments):
+        if len(arguments) > 1:
+            raise FunctionException("Expect max 1 arguments: (exit code: num !optional)")
+        if len(arguments) == 1:
+            code = arguments[0]
+            if not isinstance(code, float) or not isinstance(code, int):
+                raise FunctionException("First argumets must be type 'num'.")
+            exit(math.floor(code))
+        exit(0)
+
 
 class MathFunction(ForgeNative):
     def __init__(self):
@@ -1469,5 +1493,5 @@ class Max(MathFunction):
         obj2 = self.check_number(arguments[1])
         return max(obj, obj2)
 
-nativeFunctions = [SpawnRandom, SpawnWindow, Hash, Clock, GetLine, Type, Now, ToString, ToUpper, ToLower, ToNumber, ToArray, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, Min, Max, WriteToFile, ReadFile, ClearFile, CreateFile]
+nativeFunctions = [SpawnRandom, SpawnWindow, Hash, Clock, GetLine, Type, Now, ToString, ToUpper, ToLower, ToNumber, ToArray, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, Min, Max, WriteToFile, ReadFile, ClearFile, CreateFile, Exit]
 nativeGlobals = {"PI": math.pi, "E": math.e}

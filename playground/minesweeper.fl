@@ -1,0 +1,164 @@
+import <Time>
+var win = window([630, 630], "Minesweeper");
+
+//LOGIC
+var board = [];
+var SIZE = 9;
+var TILE_SIZE = 70;
+var MINES_COUNT = 10;
+var random = random();
+
+//WINDOW
+var style = "background-color: white; border: 1px solid black;";
+var styleBomb = "background-color: red; border: 1px solid black;";
+var styleEmpty = "background-color: green; border: 1px solid black; color: black;";
+var buttons = [];
+var clicks = 0;
+
+fn initBoard() {
+    board = [];
+    for (var i = 0; i < SIZE; i = i + 1) {
+        var temp = [];
+        for (var j = 0; j < SIZE; j = j + 1) {
+            temp.push(false);
+        }
+        board.push(temp);
+    }
+    clicks = 0;
+}
+
+fn placeMines() {
+    var MINES_PUT = 0;
+    while (MINES_PUT < MINES_COUNT) {
+        var row = random.int(0, SIZE - 1);
+        var col = random.int(0, SIZE - 1);
+        if (board[row][col] == false) {
+            board[row][col] = true;
+            MINES_PUT = MINES_PUT + 1;
+        }
+    }
+}
+
+fn reDrawMap() {
+    for (var i = 0; i < SIZE; i = i + 1) {
+        for (var j = 0; j < SIZE; j = j + 1) {
+            buttons[i][j].setText(toString(countAdjacentMines(j, i)));
+        }
+    }
+}
+
+fn replaceMine(row, col) {
+    var set = false;
+    var i = 0;
+    var j = 0;
+    while (set == false) {
+        i = random.int(0, SIZE-1);
+        j = random.int(0, SIZE-1);
+        if (board[i][j] == false){
+            board[i][j] = true;
+            set = true;
+        }
+    }
+    
+    board[row][col] = false;
+    reDrawMap();
+}
+
+fn firstClick(col, row) {
+    var dx = [0, -1, -1, -1, 0, 0, 1, 1, 1];
+    var dy = [0, -1, 0, 1, -1, 1, -1, 0, 1];
+    for (var d = 0; d < 9; d = d + 1) {
+        var newRow = row + dx[d];
+        var newCol = col + dy[d];
+        //out newRow + ", " + newCol + ": " + board[newRow][newCol];
+        if (isValid(newRow, newCol)) {
+            if (board[newCol][newRow] == false) {
+                clicks = clicks + 1;
+                buttons[newRow][newCol].setStyle(styleEmpty);
+            }
+        }
+    }
+}
+
+fn callback(button) {
+    var pos = button.getPos();
+    var col = pos[0] / 70;
+    var row = pos[1] / 70;
+    //out "Row: " + row + ", Col: " + col + ", isBomb: " + board[row][col];
+    out clicks;
+    if (clicks == 0) {
+        if (board[row][col] == true) {
+            replaceMine(row, col);
+        }
+        firstClick(row, col);
+        return;
+    }
+    if (board[row][col] == true) {
+        button.setStyle(styleBomb);
+        if (win.showDialog("Do you want to play another one?", "YOU DIED!")) {
+            play();
+        } else {
+            exit();
+        }
+    }
+    else {
+        if (button.getStyle() == styleEmpty){
+            return;
+        }
+        clicks = clicks + 1;
+        button.setStyle(styleEmpty);
+        if (clicks == SIZE*SIZE-MINES_COUNT) {
+            if (win.showDialog("Do you want to play another one?", "YOU WON!")) {
+                play();
+            } else {
+                exit();
+            }
+        }
+    }
+}
+
+fn isValid(row, col) {
+    return row >= 0 and row < SIZE and col >= 0 and col < SIZE;
+}
+
+fn countAdjacentMines(row, col) {
+    var count = 0;
+    if (board[row][col] == true) {
+        return -1;
+    }
+    var dx = [-1, -1, -1, 0, 0, 1, 1, 1];
+    var dy = [-1, 0, 1, -1, 1, -1, 0, 1];
+    for (var d = 0; d < 8; d = d + 1) {
+        var newRow = row + dx[d];
+        var newCol = col + dy[d];
+        if (isValid(newRow, newCol)) {
+            if (board[newRow][newCol] == true) {
+                count = count + 1;
+            }
+        }
+    }
+    return count;
+}
+
+fn drawMap() {
+    buttons = [];
+    for (var i = 0; i < SIZE; i = i + 1) {
+        var temp = [];
+        for (var j = 0; j < SIZE; j = j + 1) {
+            var button = win.addButton(toString(countAdjacentMines(j, i)), [i * TILE_SIZE, j * TILE_SIZE], [TILE_SIZE, TILE_SIZE], callback, style);
+            temp.add(button);
+        }
+        buttons.add(temp);
+    }
+    //for (var i = 0; i < SIZE; i = i + 1) {
+        //out i + ". " + board[i];
+    //}
+}
+
+fn play() {
+    initBoard();
+    placeMines();
+    drawMap();
+}
+play();
+win.show();

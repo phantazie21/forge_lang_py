@@ -78,8 +78,9 @@ window.addButton("Set text area to 'kuki'", [240, 495], [150, 30], setTextArea, 
 var random = random();
 var colors = ["red", "blue", "green", "black", "white", "pink"];
 fn callback() {
-    button1.setPos([button1.getPos()[0] + 1, button1.getPos()[1] + 1]);
+    //button1.setPos([button1.getPos()[0] + 1, button1.getPos()[1] + 1]);
     //button1.setSize([max(button1.getSize()[0] - 1, 10), max(button1.getSize()[1] - 1, 10)]);
+    button1.setPos([random.int(0, 700), random.int(0, 500)]);
     var val = random.int(0, 100);
     button1.setSize([val, val]);
     button1.setStyle(button1.getStyle() + "background-color: " + random.choice(colors) + ";");

@@ -1,0 +1,30 @@
+import <Vector2>
+
+var window = window([600, 600], "Game");
+
+var tiles = [];
+var style = "background-color: white; border: 1px solid black";
+
+fn callback(asd) {
+    var pos = asd.getPos();
+    var col = pos[0] / 60;
+    var row = pos[1] / 60;
+    out "Row: " + row + ", Col: " + col;
+    asd.setStyle(style + ";background-color: green");
+}
+
+for (var i = 0; i < 10; i = i + 1) {
+    var temp = [];
+    for (var j = 0; j < 10; j = j + 1) {
+        var tile = window.addButton(i + " " + j, [i * 60, j * 60], [60, 60], callback, style);
+        temp.push(tile);
+    }
+    tiles.push(temp);
+}
+
+for (var i = 0; i < tiles.length(); i = i + 1) {
+    for (var j = 0; j < tiles[i].length(); j = j + 1) {
+        out tiles[i][j].getText();
+    }
+}
+window.show();
