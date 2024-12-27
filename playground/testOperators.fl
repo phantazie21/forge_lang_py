@@ -14,3 +14,11 @@ out "-=";
 for (var i = 100; i > 0; i -= 10) {
     out i;
 }
+out "++";
+for (var i = 0; i < 10; i++) {
+    out i;
+}
+out "--";
+for (var i = 10; i > 0; i--) {
+    out i;
+}

@@ -69,9 +69,15 @@ class ForgeScanner:
             self.addToken(TokenType.DOT)
             return
         elif c == '-':
+            if self.match('-'):
+                self.addToken(TokenType.MINUS_MINUS)
+                return
             self.addToken(TokenType.MINUS_EQUAL if self.match('=') else TokenType.MINUS)
             return
         elif c == '+':
+            if self.match('+'):
+                self.addToken(TokenType.PLUS_PLUS)
+                return
             self.addToken(TokenType.PLUS_EQUAL if self.match('=') else TokenType.PLUS)
             return
         elif c == ';':

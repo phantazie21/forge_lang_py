@@ -11,7 +11,7 @@ class String {
     }
 
     replace(char, value) {
-        for (var i = 0; i < this.array.length(); i = i + 1) {
+        for (var i = 0; i < this.array.length(); i++) {
             if (this.array[i] == char) {
                 this.array[i] = value;
                 break;
@@ -21,7 +21,7 @@ class String {
     }
 
     replaceAll(char, value) {        
-        for (var i = 0; i < this.array.length(); i = i + 1) {
+        for (var i = 0; i < this.array.length(); i++) {
             if (this.array[i] == char) {
                 this.array[i] = value;
             }
@@ -32,7 +32,7 @@ class String {
     split(separator) {
         var ret = [];
         var temp = [];
-        for (var i = 0; i < this.array.length(); i = i + 1) {
+        for (var i = 0; i < this.array.length(); i++) {
             if (this.array[i] != separator) {
                 temp.add(this.array[i]);
                 continue;

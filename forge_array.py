@@ -41,7 +41,7 @@ class RemoveAt(ForgeCallable):
         try:
             if len(self.array.elements) == 0:
                 raise Exception("Array is empty.")
-            if not isinstance(arguments[0], float) or not isinstance(arguments[0], int):
+            if not isinstance(arguments[0], float) and not isinstance(arguments[0], int):
                 raise TypeError()
             arguments[0] = math.floor(arguments[0])
             if arguments[0] >= len(self.array.elements):

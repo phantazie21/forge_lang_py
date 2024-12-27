@@ -161,11 +161,11 @@ class RandomInt(ForgeNative):
         _min = 0
         _max = 0
         if len(arguments) > 0:
-            if not isinstance(arguments[0], float):
+            if not isinstance(arguments[0], float) and not isinstance(arguments[0], int):
                 raise FunctionException("First argument must be 'num', the minimum of random (inclusive).")
             _min = int(arguments[0])
         if len(arguments) > 1:
-            if not isinstance(arguments[1], float):
+            if not isinstance(arguments[1], float) and not isinstance(arguments[0], int):
                 raise FunctionException("Second argument must be 'num', the maximum of random (inclusive).")
             _max = int(arguments[1])
         return random.randint(_min, _max)
@@ -188,11 +188,11 @@ class RandomNum(ForgeNative):
         _min = 0
         _max = 0
         if len(arguments) > 0:
-            if not isinstance(arguments[0], float):
+            if not isinstance(arguments[0], float) and not isinstance(arguments[0], int):
                 raise FunctionException("First argument must be 'num', the minimum of random (inclusive).")
             _min = arguments[0]
         if len(arguments) > 1:
-            if not isinstance(arguments[1], float):
+            if not isinstance(arguments[1], float) and not isinstance(arguments[0], int):
                 raise FunctionException("Second argument must be 'num', the maximum of random (inclusive).")
             _max = arguments[1]
         return random.uniform(_min, _max)
@@ -720,7 +720,7 @@ class SetDropdown(ForgeNative):
             index = self.dropdown.fields.get("dropdown").findText(arguments[0])
             if index:
                 self.dropdown.fields.get("dropdown").setCurrentIndex(index)
-        elif isinstance(arguments[0], float):
+        elif isinstance(arguments[0], float) or isinstance(arguments[0], int):
             index = int(arguments[0])
             self.dropdown.fields.get("dropdown").setCurrentIndex(index)
         else:
@@ -806,7 +806,7 @@ class SetListView(ForgeNative):
             x = self.listview.fields.get("listview").findItems(arguments[0])
             if x:
                 self.listview.fields.get("listview").setCurrentItem(x)
-        elif isinstance(arguments[0], float):
+        elif isinstance(arguments[0], float) or isinstance(arguments[0], int):
             index = int(arguments[0])
             self.listview.fields.get("listview").setCurrentRow(index)
 
@@ -986,7 +986,7 @@ class AddTimer(ForgeNative):
         return 2 # interval, callback
     
     def call(self, interpreter, arguments):
-        if not isinstance(arguments[0], float):
+        if not isinstance(arguments[0], float) and not isinstance(arguments[0], int):
             raise FunctionException("First argument must be number type (interval in msec).", self.name)
         if not isinstance(arguments[1], ForgeFunction):
             raise FunctionException("Second argument must be a callable function.", self.name)
@@ -1395,8 +1395,8 @@ class Exit(ForgeNative):
             raise FunctionException("Expect max 1 arguments: (exit code: num !optional)")
         if len(arguments) == 1:
             code = arguments[0]
-            if not isinstance(code, float) or not isinstance(code, int):
-                raise FunctionException("First argumets must be type 'num'.")
+            if not isinstance(code, float) and not isinstance(code, int):
+                raise FunctionException("First argument must be type 'num'.")
             exit(math.floor(code))
         exit(0)
 
@@ -1409,7 +1409,7 @@ class MathFunction(ForgeNative):
         return 1
 
     def check_number(self, argument):
-        if not isinstance(argument, float):
+        if not isinstance(argument, float) and not isinstance(argument, int):
             raise FunctionException("Expect type 'number'.", self.name)
 
         return argument

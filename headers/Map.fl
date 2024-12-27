@@ -6,7 +6,7 @@ class Map {
     }
 
     containsKey(key) {
-        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+        for (var i = 0; i < this.pairs.length(); i++) {
             if (this.pairs[i].key == key) {
                 return true;
             }
@@ -15,7 +15,7 @@ class Map {
     }
 
     containsValue(value) {
-        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+        for (var i = 0; i < this.pairs.length(); i++) {
             if (this.pairs[i].value == value) {
                 return true;
             }
@@ -24,7 +24,7 @@ class Map {
     }
 
     get(key) {
-        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+        for (var i = 0; i < this.pairs.length(); i++) {
             if (this.pairs[i].key == key) {
                 return this.pairs[i].value;
             }
@@ -33,7 +33,7 @@ class Map {
     }
 
     set(key, value) {
-        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+        for (var i = 0; i < this.pairs.length(); i++) {
             if (this.pairs[i].key == key) {
                 this.pairs[i].value = value;
                 return;
@@ -43,7 +43,7 @@ class Map {
     }
 
     remove(key) {
-        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+        for (var i = 0; i < this.pairs.length(); i++) {
             if (this.pairs[i].key == key) {
                 this.pairs.removeValue(this.pairs[i]);
                 return;
@@ -52,7 +52,7 @@ class Map {
     }
 
     removeValue(value) {
-        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+        for (var i = 0; i < this.pairs.length(); i++) {
             if (this.pairs[i].value == value) {
                 this.pairs.removeValue(this.pairs[i]);
                 return;
@@ -62,7 +62,7 @@ class Map {
 
     toString() {
         var str = "Map(";
-        for (var i = 0; i < this.pairs.length(); i = i + 1) {
+        for (var i = 0; i < this.pairs.length(); i++) {
             str = str + this.pairs[i].toString();
             if (i < this.pairs.length() - 1) {
                 str = str + ", ";

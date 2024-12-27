@@ -42,9 +42,13 @@ class Parser:
     def assignment(self):
         expr = self._or()
 
-        if self.match([TokenType.EQUAL, TokenType.PLUS_EQUAL, TokenType.MINUS_EQUAL, TokenType.SLASH_EQUAL, TokenType.STAR_EQUAL]):
+        if self.match([TokenType.EQUAL, TokenType.PLUS_EQUAL, TokenType.MINUS_EQUAL, TokenType.SLASH_EQUAL, TokenType.STAR_EQUAL, TokenType.PLUS_PLUS, TokenType.MINUS_MINUS]):
             equals = self.previous()
-            value = self.assignment()
+            if equals.tokenType not in [TokenType.PLUS_PLUS, TokenType.MINUS_MINUS]:
+                value = self.assignment()
+            else:
+                binaryOperator = TokenType.PLUS if equals.tokenType == TokenType.PLUS_PLUS else TokenType.MINUS
+                value = Binary(expr, ForgeToken(binaryOperator, "", "", equals.line), Literal(1))
             if equals.tokenType in [TokenType.PLUS_EQUAL, TokenType.MINUS_EQUAL, TokenType.SLASH_EQUAL, TokenType.STAR_EQUAL]:
                 binaryOperator = TokenType.PLUS
                 if equals.tokenType == TokenType.MINUS_EQUAL:

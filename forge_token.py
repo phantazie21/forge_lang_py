@@ -57,8 +57,10 @@ class TokenType(Enum):
     MINUS_EQUAL = 46
     SLASH_EQUAL = 47
     STAR_EQUAL = 48
+    PLUS_PLUS = 49
+    MINUS_MINUS = 50
 
-    EOF = 49
+    EOF = 51
 
 class ForgeToken:
     def __init__(self, tokenType, lexeme, literal, line):
