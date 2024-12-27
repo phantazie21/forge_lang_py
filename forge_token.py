@@ -53,8 +53,12 @@ class TokenType(Enum):
     LEFT_BRACKET = 42
     RIGHT_BRACKET = 43
     MODULO = 44
+    PLUS_EQUAL = 45
+    MINUS_EQUAL = 46
+    SLASH_EQUAL = 47
+    STAR_EQUAL = 48
 
-    EOF = 45
+    EOF = 49
 
 class ForgeToken:
     def __init__(self, tokenType, lexeme, literal, line):

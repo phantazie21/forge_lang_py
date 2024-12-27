@@ -1,4 +1,4 @@
-from forge_token import TokenType
+from forge_token import TokenType, ForgeToken
 from expr import *
 from stmt import *
 from error import error, report
@@ -42,9 +42,18 @@ class Parser:
     def assignment(self):
         expr = self._or()
 
-        if self.match([TokenType.EQUAL]):
+        if self.match([TokenType.EQUAL, TokenType.PLUS_EQUAL, TokenType.MINUS_EQUAL, TokenType.SLASH_EQUAL, TokenType.STAR_EQUAL]):
             equals = self.previous()
             value = self.assignment()
+            if equals.tokenType in [TokenType.PLUS_EQUAL, TokenType.MINUS_EQUAL, TokenType.SLASH_EQUAL, TokenType.STAR_EQUAL]:
+                binaryOperator = TokenType.PLUS
+                if equals.tokenType == TokenType.MINUS_EQUAL:
+                    binaryOperator = TokenType.MINUS
+                elif equals.tokenType == TokenType.SLASH_EQUAL:
+                    binaryOperator = TokenType.SLASH
+                elif equals.tokenType == TokenType.STAR_EQUAL:
+                    binaryOperator = TokenType.STAR
+                value = Binary(expr, ForgeToken(binaryOperator, "", "", equals.line), value)
             if isinstance(expr, Variable):
                 name = expr.name
                 return Assign(name, value)

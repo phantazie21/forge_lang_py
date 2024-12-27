@@ -69,16 +69,16 @@ class ForgeScanner:
             self.addToken(TokenType.DOT)
             return
         elif c == '-':
-            self.addToken(TokenType.MINUS)
+            self.addToken(TokenType.MINUS_EQUAL if self.match('=') else TokenType.MINUS)
             return
         elif c == '+':
-            self.addToken(TokenType.PLUS)
+            self.addToken(TokenType.PLUS_EQUAL if self.match('=') else TokenType.PLUS)
             return
         elif c == ';':
             self.addToken(TokenType.SEMICOLON)
             return
         elif c == '*':
-            self.addToken(TokenType.STAR)
+            self.addToken(TokenType.STAR_EQUAL if self.match('=') else TokenType.STAR)
             return
         elif c == "%":
             self.addToken(TokenType.MODULO)
@@ -99,16 +99,26 @@ class ForgeScanner:
             if self.match('/'):
                 while self.peek() != '\n' and not self.isAtEnd():
                     self.advance()
+            elif self.match('*'):
+                while self.peek() != '*' and self.peekNext() != '/' and not self.isAtEnd():
+                    if self.peek() == '\n':
+                        self.line += 1
+                    self.advance()
+                if self.peek() == "\0":
+                    error(self.line, "Unterminated comment.")
+                    return
+                self.advance()
+                self.advance()
             else:
-                self.addToken(TokenType.SLASH)
+                self.addToken(TokenType.SLASH_EQUAL if self.match('=') else TokenType.SLASH)
             return
         elif c in [' ', '\r', '\t']:
             return
         elif c == '\n':
             self.line += 1
             return
-        elif c == '"':
-            self.string()
+        elif c == '"' or c == "'":
+            self.string(c)
             return
         elif c.isdigit():
             self.number()
@@ -149,8 +159,8 @@ class ForgeScanner:
             return '\0'
         return self.source[self.current + 1]
     
-    def string(self):
-        while self.peek() != '"' and not self.isAtEnd():
+    def string(self, delimiter):
+        while self.peek() != delimiter and not self.isAtEnd():
             if self.peek() == '\n':
                 self.line += 1
             self.advance()
