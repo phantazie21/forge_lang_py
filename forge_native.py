@@ -5,9 +5,10 @@ from forge_instance import ForgeInstance
 from error import FunctionException
 from forge_array import ForgeArray
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QCheckBox, QLineEdit, QMessageBox, QComboBox, QListWidget, QPlainTextEdit
-from PyQt6.QtCore import QElapsedTimer, QThread, pyqtSignal
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import QElapsedTimer, QThread, pyqtSignal, Qt
+from PyQt6.QtGui import QIcon, QCursor
 from preprocessor import HEADERS
+import keyboard
 
 import random
 import ctypes
@@ -347,12 +348,29 @@ class SetSize(ForgeNative):
         
         self.parent.fields.get(self.parent.name.lower()).resize(width, height)
 
+class RemoveComponent(ForgeNative):
+    def __init__(self, parent, _):
+        self.name = "remove"
+        self.parent = parent
+
+    def arity(self):
+        return 0
+
+    def call(self, interpreter, arguments):
+        component_type = self.parent.name.lower()  # Dynamically determine the type
+        widget = self.parent.fields.get(component_type)
+        if widget is not None:
+            widget.deleteLater()
+            self.parent.fields[component_type] = None
+        else:
+            raise FunctionException(f"{self.parent.name} is already removed or not initialized.", self.name)
+
 class Button(ForgeInstance):
     name = "Button"
     def __init__(self, button):
         self._class = Button
         self.fields = {"button": button}
-        self.methods = {"setText": SetButton, "getText": GetButton, "click": ClickButton, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize}
+        self.methods = {"setText": SetButton, "getText": GetButton, "click": ClickButton, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize, "remove": RemoveComponent}
 
     def get(self, name):
         try:
@@ -435,7 +453,7 @@ class Label(ForgeInstance):
     def __init__(self, label):
         self._class = Label
         self.fields = {"label": label}
-        self.methods = {"set": SetLabel, "get": GetLabel, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize}
+        self.methods = {"set": SetLabel, "get": GetLabel, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize, "remove": RemoveComponent}
 
     def get(self, name):
         try:
@@ -555,7 +573,7 @@ class Textbox(ForgeInstance):
     def __init__(self, textbox):
         self._class = Textbox
         self.fields = {"textbox": textbox}
-        self.methods = {"set": SetTextbox, "get": GetTextbox, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize}
+        self.methods = {"set": SetTextbox, "get": GetTextbox, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize, "remove": RemoveComponent}
 
     def get(self, name):
         try:
@@ -631,7 +649,7 @@ class TextArea(ForgeInstance):
     def __init__(self, textarea):
         self._class = TextArea
         self.fields = {"textarea": textarea}
-        self.methods = {"get": GetTextArea, "set": SetTextArea, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize}
+        self.methods = {"get": GetTextArea, "set": SetTextArea, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize, "remove": RemoveComponent}
 
     def get(self, name):
         try:
@@ -713,7 +731,7 @@ class Dropdown(ForgeInstance):
     def __init__(self, dropdown):
         self._class = Dropdown
         self.fields = {"dropdown": dropdown}
-        self.methods = {"get": GetDropdown, "set": SetDropdown, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize}
+        self.methods = {"get": GetDropdown, "set": SetDropdown, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize, "remove": RemoveComponent}
 
     def get(self, name):
         try:
@@ -797,7 +815,7 @@ class ListView(ForgeInstance):
     def __init__(self, listview):
         self._class = ListView
         self.fields = {"listview": listview}
-        self.methods = {"get": GetListView, "set": SetListView, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize}
+        self.methods = {"get": GetListView, "set": SetListView, "setPos": SetPos, "getPos": GetPos, "setStyle": SetStyle, "getStyle": GetStyle, "setSize": SetSize, "getSize": GetSize, "remove": RemoveComponent}
 
     def get(self, name):
         try:
@@ -994,6 +1012,60 @@ class SetFullscreen(ForgeNative):
         if arguments[0] == True:
             self.parent.fields.get("window").showFullScreen()
 
+class IsMousePressed(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "isMousePressed"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 1 # button
+    
+    def call(self, interpreter, arguments):
+        if not isinstance(arguments[0], str):
+            raise FunctionException("First argument must be type 'string'.", self.name)
+        button = arguments[0]
+        if not button in ["left", "right", "middle"]:
+            raise FunctionException('First argument must be "left", "middle", or "right".')
+        if button == "left":
+            return self.parent.fields.get("app").instance().mouseButtons() == Qt.MouseButton.LeftButton
+        elif button == "middle":
+            return self.parent.fields.get("app").instance().mouseButtons() == Qt.MouseButton.MiddleButton
+        elif button == "right":
+            return self.parent.fields.get("app").instance().mouseButtons() == Qt.MouseButton.RightButton
+
+class MousePosMiddle(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "mousePosMiddle"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        window = self.parent.fields.get("window")
+        cursorPos = window.mapFromGlobal(QCursor.pos())
+        cursorPos = [cursorPos.x() - (window.width() / 2), cursorPos.y() - (window.height() / 2)]
+        cursorPos[0] = max((window.width() / -2), min(cursorPos[0], (window.width() / 2)))
+        cursorPos[1] = -1 * max((window.height() / -2), min(cursorPos[1], (window.height() / 2)))
+        return ForgeArray(cursorPos)
+
+class MousePos(ForgeNative):
+    def __init__(self, parent, token):
+        self.name = "mousePos"
+        self.parent = parent
+        self.token = token
+
+    def arity(self):
+        return 0
+    
+    def call(self, interpreter, arguments):
+        window = self.parent.fields.get("window")
+        cursorPos = window.mapFromGlobal(QCursor.pos())
+        cursorPos = [cursorPos.x(), cursorPos.y()]
+        return ForgeArray(cursorPos)
+
 class Window(ForgeInstance):
     name = "Window"
     def __init__(self, width, height, title, logo):
@@ -1016,7 +1088,10 @@ class Window(ForgeInstance):
             "showDialog": ShowDialog,
             "addTimer": AddTimer,
             "show": ShowWindow,
-            "setFullscreen": SetFullscreen
+            "setFullscreen": SetFullscreen,
+            "isMousePressed": IsMousePressed,
+            "mousePosMiddle": MousePosMiddle,
+            "mousePos": MousePos
             }
 
     def get(self, name):
@@ -1026,6 +1101,19 @@ class Window(ForgeInstance):
             raise FunctionException(f"Undefined method.", name.lexeme)
     
 #FUNCTIONS
+class IsKeyPressed(ForgeNative):
+    def __init__(self):
+        self.name = "isKeyPressed"
+
+    def arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        if not isinstance(arguments[0], str):
+            raise FunctionException("First argument must be type 'string'.", self.name)
+        key = arguments[0]
+        return keyboard.is_pressed(key)
+
 class SpawnRandom(ForgeNative):
     def __init__(self):
         self.name = "random"
@@ -1493,5 +1581,5 @@ class Max(MathFunction):
         obj2 = self.check_number(arguments[1])
         return max(obj, obj2)
 
-nativeFunctions = [SpawnRandom, SpawnWindow, Hash, Clock, GetLine, Type, Now, ToString, ToUpper, ToLower, ToNumber, ToArray, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, Min, Max, WriteToFile, ReadFile, ClearFile, CreateFile, Exit]
+nativeFunctions = [IsKeyPressed, SpawnRandom, SpawnWindow, Hash, Clock, GetLine, Type, Now, ToString, ToUpper, ToLower, ToNumber, ToArray, Exponent, Power, Sqrt, Log, ToRadian, Sin, ArcSin, Cos, ArcCos, Tan, ArcTan, Floor, Ceiling, Round, Absolute, Sign, Min, Max, WriteToFile, ReadFile, ClearFile, CreateFile, Exit]
 nativeGlobals = {"PI": math.pi, "E": math.e}

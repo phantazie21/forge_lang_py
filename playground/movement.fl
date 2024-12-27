@@ -1,0 +1,70 @@
+import <Vector2>
+var MOVE_SPEED = 5;
+
+var win = window([600, 600], "Movement");
+
+var style = "background-color: white;";
+//var style = "background: url('headers/FL.png')";
+var label = win.addLabel("", [275, 275], [50, 50], style);
+var buttons = hashMap();
+buttons.set("left", false);
+buttons.set("middle", false);
+buttons.set("right", false);
+var velocity = Vector2(0, 0);
+
+fn fixedUpdate() {
+    if (velocity.length() > 0) {
+        velocity.normalize();
+        var pos = label.getPos();
+        pos[0] = pos[0] + velocity.x * MOVE_SPEED;
+        pos[1] = pos[1] + velocity.y * MOVE_SPEED;
+        label.setPos(pos);
+        velocity = Vector2(0, 0);
+    }
+}
+
+var objects = [];
+
+fn update() {
+    if (isKeyPressed("w") or isKeyPressed("up")) {
+        velocity.y = -1;
+    }
+    else if (isKeyPressed("s") or isKeyPressed("down")) {
+        velocity.y = 1;
+    }
+    if (isKeyPressed("a") or isKeyPressed("left")) {
+        velocity.x = -1;
+    }
+    else if (isKeyPressed("d") or isKeyPressed("right")) {
+        velocity.x = 1;
+    }
+    if (win.isMousePressed("left") and buttons.get("left") == false) {
+        //out "left click";
+        var mousePos = win.mousePos();
+        var temp = win.addLabel("", [mousePos[0] - 25, mousePos[1] - 25], [50, 50], style);
+        objects.add(temp);
+        buttons.set("left", true);
+    } else if (!win.isMousePressed("left")) {
+        buttons.set("left", false);
+    }
+    if (win.isMousePressed("middle") and buttons.get("middle") == false) {
+        //out "middle click";
+        buttons.set("middle", true);
+    } else if (!win.isMousePressed("middle")) {
+        buttons.set("middle", false);
+    }
+    if (win.isMousePressed("right") and buttons.get("right") == false) {
+        //out "right click";
+        var temp = objects.pop();
+        if (temp) {
+            temp.remove();
+        }
+        buttons.set("right", true);
+    } else if (!win.isMousePressed("right")) {
+        buttons.set("right", false);
+    }
+}
+
+var fixed = win.addTimer(16.67, fixedUpdate);
+var update = win.addTimer(0.1, update);
+win.show();

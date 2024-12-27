@@ -27,7 +27,8 @@ class Remove(ForgeCallable):
         try:
             return self.array.elements.pop(0)
         except Exception as e:
-            raise NativeException("Array is empty.", "remove")
+            #raise NativeException("Array is empty.", "remove")
+            return None
         
 class RemoveAt(ForgeCallable):
     def __init__(self, array):
@@ -93,7 +94,8 @@ class Pop(ForgeCallable):
         try:
             return self.array.elements.pop()
         except Exception as e:
-            raise NativeException("Array is empty.", "pop")
+            #raise NativeException("Array is empty.", "pop")
+            return None
         
 class Length(ForgeCallable):
     def __init__(self, array):
