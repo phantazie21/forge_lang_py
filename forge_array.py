@@ -81,7 +81,7 @@ class Push(ForgeCallable):
         try:
             return self.array.elements.insert(0, arguments[0])
         except Exception as e:
-            raise NativeException("Error while pushing." "push")
+            raise NativeException("Error while pushing.", "push")
 
 class Pop(ForgeCallable):
     def __init__(self, array):
