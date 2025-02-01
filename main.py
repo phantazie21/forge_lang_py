@@ -5,12 +5,21 @@ import forge_parser
 from interpreter import Interpreter
 from resolver import Resolver
 from preprocessor import PreProcessor
+from compiler import Compiler
 import error
+
+def write_to_file(resolved_statements, filename="output.forgec"):
+    with open(filename, "w") as file:
+        file.writelines([str(stmt) + "\n" for stmt in resolved_statements])
+
+def read_file(filename="output.forgec"):
+    with open(filename, "r") as f:
+        return f.read()
 
 interpreter = Interpreter()
 resolver = Resolver(interpreter)
 
-def run(source, filename=""):
+def run(source, filename="", compile=False):
     global interpreter
     preprocessor = PreProcessor(source, filename)
     if error.hadError:
@@ -26,7 +35,15 @@ def run(source, filename=""):
         return
 
     resolver.resolveStatements(expr)
-    interpreter.interpret(expr)
+    if error.hadError:
+        return
+    
+    if not compile:
+        interpreter.interpret(expr)
+    else:
+        compiler = Compiler(expr)
+        code = compiler.generate_code()
+        write_to_file(code, "output.c")
 
 def runPrompt():
     while True:
@@ -36,20 +53,24 @@ def runPrompt():
         run(prompt)
         error.hadError = False
 
-def runFile(filename):
-    run(open(filename).read(), filename)
+def runFile(filename, options):
+    if '-c' in options:
+        run(open(filename).read(), filename, True)
+    else:
+        run(open(filename).read(), filename)
     if error.hadError:
         sys.exit(65)
     if error.hadRuntimeError:
         sys.exit(70)
 
 def main():
-    if len(sys.argv) > 2:
+    '''if len(sys.argv) > 2:
         print("Usage: python main.py <filename>")
-        sys.exit(1)
-    if len(sys.argv) == 2:
+        sys.exit(1)'''
+    if len(sys.argv) >= 2:
         filename = sys.argv[1]
-        runFile(filename)
+        options = sys.argv[2:]
+        runFile(filename, options)
     else:
         runPrompt()
 

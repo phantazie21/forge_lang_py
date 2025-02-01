@@ -65,7 +65,7 @@ class Logical(Expr):
         return visitor.visitLogical(self)
     
     def __str__(self):
-        return f"Logical({self.expr_left}, {self.operator}, {self.expr_right})"
+        return f"Logical({self.left}, {self.operator}, {self.right})"
 
 class Variable(Expr):
     def __init__(self, token_name):
