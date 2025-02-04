@@ -1,0 +1,11 @@
+var string = "kuki";
+var num = 0;
+var boolean = true;
+var nothing;
+out string;
+out num;
+out boolean;
+out nothing;
+out 0.0;
+out "HALLO";
+out "fasz" + "kuki";

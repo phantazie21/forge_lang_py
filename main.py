@@ -1,5 +1,6 @@
 import sys
 import forge_scanner
+import subprocess
 
 import forge_parser
 from interpreter import Interpreter
@@ -8,9 +9,9 @@ from preprocessor import PreProcessor
 from compiler import Compiler
 import error
 
-def write_to_file(resolved_statements, filename="output.forgec"):
+def write_to_file(code, filename="output.forgec"):
     with open(filename, "w") as file:
-        file.writelines([str(stmt) + "\n" for stmt in resolved_statements])
+        file.write(code)
 
 def read_file(filename="output.forgec"):
     with open(filename, "r") as f:
@@ -19,7 +20,7 @@ def read_file(filename="output.forgec"):
 interpreter = Interpreter()
 resolver = Resolver(interpreter)
 
-def run(source, filename="", compile=False):
+def run(source, filename="", compile=False, output_name="forged.exe"):
     global interpreter
     preprocessor = PreProcessor(source, filename)
     if error.hadError:
@@ -44,6 +45,10 @@ def run(source, filename="", compile=False):
         compiler = Compiler(expr)
         code = compiler.generate_code()
         write_to_file(code, "output.c")
+        try:
+            subprocess.run(["gcc", "output.c", "-o", output_name], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error: {e}") 
 
 def runPrompt():
     while True:
@@ -55,7 +60,15 @@ def runPrompt():
 
 def runFile(filename, options):
     if '-c' in options:
-        run(open(filename).read(), filename, True)
+        output_name = "forged.exe"
+        if '-o' in options:
+            o_index = options.index('-o')  # Find position of '-o'
+            if o_index + 1 < len(options):  # Ensure there's an argument after '-o'
+                output_name = options[o_index + 1]
+            else:
+                print("Error: Missing output file name after '-o'")
+                sys.exit(1)
+        run(open(filename).read(), filename, True, output_name)
     else:
         run(open(filename).read(), filename)
     if error.hadError:
