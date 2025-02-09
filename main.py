@@ -20,7 +20,7 @@ def read_file(filename="output.forgec"):
 interpreter = Interpreter()
 resolver = Resolver(interpreter)
 
-def run(source, filename="", compile=False, output_name="forged.exe"):
+def run(source, filename="", compile=False, output_name="forged.exe", run_gcc=False):
     global interpreter
     preprocessor = PreProcessor(source, filename)
     if error.hadError:
@@ -45,10 +45,11 @@ def run(source, filename="", compile=False, output_name="forged.exe"):
         compiler = Compiler(expr)
         code = compiler.generate_code()
         write_to_file(code, "output.c")
-        try:
-            subprocess.run(["gcc", "output.c", "-o", output_name], check=True)
-        except subprocess.CalledProcessError as e:
-            print(f"Error: {e}") 
+        if run_gcc:
+            try:
+                subprocess.run(["gcc", "output.c", "-o", output_name], check=True)
+            except subprocess.CalledProcessError as e:
+                print(f"Error: {e}") 
 
 def runPrompt():
     while True:
@@ -59,16 +60,19 @@ def runPrompt():
         error.hadError = False
 
 def runFile(filename, options):
-    if '-c' in options:
+    if '-c' in options: # Compile
         output_name = "forged.exe"
-        if '-o' in options:
+        run_gcc = True
+        if '-C' in options:                # Get -C
+            run_gcc = False
+        if '-o' in options:                # Give output file's name
             o_index = options.index('-o')  # Find position of '-o'
             if o_index + 1 < len(options):  # Ensure there's an argument after '-o'
                 output_name = options[o_index + 1]
             else:
                 print("Error: Missing output file name after '-o'")
                 sys.exit(1)
-        run(open(filename).read(), filename, True, output_name)
+        run(open(filename).read(), filename, True, output_name, run_gcc)
     else:
         run(open(filename).read(), filename)
     if error.hadError:

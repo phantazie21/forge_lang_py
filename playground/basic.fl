@@ -1,11 +1,13 @@
 var string = "kuki";
 var num = 0;
 var boolean = true;
+var twoplusfour = 2 + 4;
 var nothing;
 out string;
 out num;
 out boolean;
 out nothing;
-out 0.0;
+out twoplusfour;
+out 0.1;
 out "HALLO";
-out "fasz" + "kuki";
+out "fasz" + "kuki" + 6;
