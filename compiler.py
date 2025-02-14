@@ -12,10 +12,12 @@ from forge_native import nativeFunctions, nativeGlobals, ForgeNative
 from forge_array import ForgeArray, ForgeIndexable
 import math
 
+ARG_COUNT = 1
+
 def get_type(obj):
     if isinstance(obj, Literal):
         obj = obj.value
-    if isinstance(obj, bool):
+    if isinstance(obj, bool) or obj == "false" or obj == "true":
         return "boolean"
     elif isinstance(obj, float) or isinstance(obj, int):
         return "num"
@@ -47,29 +49,95 @@ class Compiler:
     def __init__(self, tree):
         self.tree = tree
         self.functions = []
+        self.varexprs = []
         self._else = []
         self._vars = {}
         self.code = ""
+        self.main_code = ""
 
     def sort_tree(self):
         for node in self.tree:
             if isinstance(node, Function):
                 self.functions.append(node)
+            elif isinstance(node, Var):
+                self.varexprs.append(node)
             else:
                 self._else.append(node)
-        self.tree = self.functions + self._else
+        self.tree = self.varexprs + self.functions + self._else
 
     def visitLiteral(self, literal):
         if isinstance(literal.value, str):
             return f'"{literal.value}"'
+        elif isinstance(literal.value, bool):
+            return str(literal.value).lower()
         else:
             return literal.value 
+
+    def visitExpression(self, expressionStatement):
+        self.evaluate(expressionStatement.expr)
+        return None
     
     def visitGrouping(self, grouping):
+        if isinstance(grouping.expr_expression, Logical):
+            self.code += "("
+            self.evaluate(grouping.expr_expression)
+            self.code += ")"
+            return
         return self.evaluate(grouping.expr_expression)
 
     def evaluate(self, expr):
         return expr.accept(self)
+
+    def visitFunction(self, functionStatement):
+        #function = ForgeFunction(functionStatement, None, False)
+        self.code += f"Var {functionStatement.name.lexeme}("
+        for i in range(len(functionStatement.params)):
+            self.code += f"Var {functionStatement.params[i].lexeme}"
+            if i < len(functionStatement.params) - 1:
+                self.code += ", "
+        self.code += ") {\n"
+        self.code += "\tVar _return;\n\t_return.kind = NONE;\n"
+        try:
+            self.executeBlock(functionStatement.body)
+            self.code += "\treturn _return;\n";
+            self.code += "}\n"
+        except ReturnException:
+            return
+        #self.environment.define(functionStatement.name.lexeme, function)
+
+    def visitReturn(self, returnStatement):
+        if returnStatement.value == None:
+            return
+        if isinstance(returnStatement.value, Variable):
+            self.code += f"\t_return.varion = {returnStatement.value.name.lexeme}.varion;\n"
+            self.code += "\treturn _return;\n"
+            self.code += "}\n"
+            raise ReturnException(None)
+        else:
+            value = self.evaluate(returnStatement.value)
+            if value:
+                self.code += f"\t_return.varion.{get_type(value)} = {value};\n"
+                self.code += f"\t_return.kind = {get_type(value).upper()};\n"
+
+    def visitCall(self, callExpr):
+        global ARG_COUNT
+        passed_args = []
+        for arg in callExpr.args:
+            if isinstance(arg, Variable):
+                passed_args.append(arg.name.lexeme)
+            else:
+                self.code += f"\tVar arg{ARG_COUNT};\n"
+                value = self.evaluate(arg)
+                self.code += f"\targ{ARG_COUNT}.varion.{get_type(value)} = {value};\n"
+                self.code += f"\targ{ARG_COUNT}.kind = {get_type(value).upper()};\n"
+                passed_args.append(f"arg{ARG_COUNT}")
+                ARG_COUNT += 1
+        self.code += f"\t{callExpr.callee.name.lexeme}("
+        for i in range(len(callExpr.args)):
+            self.code += str(passed_args[i])
+            if i < len(callExpr.args) - 1:
+                self.code += ", "
+        self.code += ");\n"
 
     def visitBinary(self, binary):
         left_type = type(binary.expr_left)
@@ -93,9 +161,27 @@ class Compiler:
                 return left - right
             elif binary.operator.tokenType == TokenType.STAR:
                 if isinstance(left, str) and isinstance(right, float):
-                    return left * math.floor(right)
+                    if not (left.endswith('"') and left.startswith('"')):
+                        if left in self._vars.keys():
+                            left = self._vars[left]
+                            #print(left)
+                            if isinstance(left, str):
+                                return left * math.floor(right)
+                        else:
+                            raise RuntimeException(f"{left} is not a valid variable, string or number", binary.operator)
+                    else:
+                        return left * math.floor(right)
                 if isinstance(left, float) and isinstance(right, str):
-                    return math.floor(left) * right
+                    if not (right.endswith('"') and right.startswith('"')):
+                        if right in self._vars.keys():
+                            right = self._vars[right]
+                            #print(right)
+                            if isinstance(right, str):
+                                return math.floor(left) * right
+                        else:
+                            raise RuntimeException(f"{right} is not a valid variable, string or number", binary.operator)
+                    else:
+                        return math.floor(left) * right
                 if isinstance(left, ForgeArray) and isinstance(right, float):
                     return ForgeArray(left.elements * math.floor(right))
                 if isinstance(left, float) and isinstance(right, ForgeArray):
@@ -110,23 +196,30 @@ class Compiler:
                 return left % right
             elif binary.operator.tokenType == TokenType.GREATER:
                 self.checkNumberOperands(binary.operator, left, right)
-                return left > right
+                return f"{left} > {right}"
             elif binary.operator.tokenType == TokenType.GREATER_EQUAL:
                 self.checkNumberOperands(binary.operator, left, right)
-                return left >= right
+                return f"{left} >= {right}"
             elif binary.operator.tokenType == TokenType.LESS:
                 self.checkNumberOperands(binary.operator, left, right)
-                return left < right
+                return f"{left} < {right}"
             elif binary.operator.tokenType == TokenType.LESS_EQUAL:
                 self.checkNumberOperands(binary.operator, left, right)
-                return left <= right
+                return f"{left} <= {right}"
             elif binary.operator.tokenType == TokenType.EQUAL_EQUAL:
-                return left == right
+                if (left in self._vars):
+                    left = f"{left}.varion.{get_type(self._vars[left])}"
+                return f"{left} == {right}"
             elif binary.operator.tokenType == TokenType.BANG_EQUAL:
-                return left != right
+                return f"{left} != {right}"
             return None
         except RuntimeException as e:
             runtimeError(e)
+
+    def checkNumberOperand(self, operator, operand):
+        if isinstance(operand, int) or isinstance(operand, float):
+            return
+        raise RuntimeException(f"Operand must be a number. Got {operand}", operator)
 
     def checkNumberOperands(self, operator, left, right):
         if isinstance(left, (int, float)) and isinstance(right, (int, float)):
@@ -155,28 +248,100 @@ class Compiler:
 
     def visitVar(self, varStatement):
         value = None
+        if varStatement.name.lexeme in self._vars.keys():
+            return
         if varStatement.initializer != None:
             value = self.evaluate(varStatement.initializer)
+            if value in self._vars.keys():
+                value = self._vars[value]
+            #print(value)
             _type = get_type(value)
-            print(_type)
+            #print(_type)
             #if (_type == "str"):
                 #value = f'"{value}"'
         self._vars[varStatement.name.lexeme] = value
-        self.code += f"\tVar {varStatement.name.lexeme};\n"
-        if (value != None):
-            if value == True:
-                value = "true"
-            self.code += f"\t{varStatement.name.lexeme}.varion.{_type} = {value};\n"
-            self.code += f"\t{varStatement.name.lexeme}.kind = {_type.upper()};\n"
+        self.code += f"Var {varStatement.name.lexeme};\n"
+        if varStatement not in self.varexprs:
+            if (value != None):
+                '''if value == True or value == False:
+                    value = str(value).lower()'''
+                self.code += f"\t{varStatement.name.lexeme}.varion.{_type} = {value};\n"
+                self.code += f"\t{varStatement.name.lexeme}.kind = {_type.upper()};\n"
+            else:
+                self.code += f"\t{varStatement.name.lexeme}.kind = NONE;\n"
         else:
-            self.code += f"\t{varStatement.name.lexeme}.kind = NONE;\n"
+            if (value != None):
+                '''if value == True or value == False:
+                    value = str(value).lower()'''
+                self.main_code += f"\t{varStatement.name.lexeme}.varion.{_type} = {value};\n"
+                self.main_code += f"\t{varStatement.name.lexeme}.kind = {_type.upper()};\n"
+            else:
+                self.main_code += f"\t{varStatement.name.lexeme}.kind = NONE;\n"
         return None
     
     def visitVariable(self, varExpression):
         #print(self._vars)
         #return self._vars[varExpression.name.lexeme]
         #return f"{varExpression.name.lexeme}.{get_type(self._vars[varExpression.name.lexeme])}"
+        #if not by_value:
+            #return varExpression.name.lexeme
+        #else:
+            #return self._vars[varExpression.name.lexeme]
         return varExpression.name.lexeme
+
+    def visitLogical(self, logicalExpr):
+        if isinstance(logicalExpr.left, Variable):
+            self.code += f"{logicalExpr.left.name.lexeme}.varion.{get_type(self._vars[logicalExpr.left.name.lexeme])}"
+        else:
+            self.generate(logicalExpr.left)
+
+        if logicalExpr.operator.tokenType == TokenType.OR:
+            self.code += " || "
+        else:
+            self.code += " && "
+
+        if isinstance(logicalExpr.right, Variable):
+            self.code += f"{logicalExpr.right.name.lexeme}.varion.{get_type(self._vars[logicalExpr.right.name.lexeme])}"
+        else:
+            self.generate(logicalExpr.right)
+        '''if logicalExpr.operator.tokenType == TokenType.OR:
+            if self.isTruthy(left):
+                return left
+        else:
+            if not self.isTruthy(left):
+                return left
+            
+        return self.evaluate(logicalExpr.right)'''
+
+    def visitBlock(self, blockStatement):
+        self.executeBlock(blockStatement.statements)
+        return None
+
+    def executeBlock(self, statements):
+        for stmt in statements:
+            self.generate(stmt)
+
+    def visitIf(self, ifStatement):
+        '''if self.isTruthy(self.evaluate(ifStatement.condition)):
+            self.execute(ifStatement.thenBranch)
+                    
+        elif ifStatement.elseBranch is not None:
+            self.execute(ifStatement.elseBranch)'''
+        #print(ifStatement.condition)
+        self.code += "\tif ("
+        if isinstance(ifStatement.condition, Variable):
+            self.code += f"{ifStatement.condition.name.lexeme}.varion.{get_type(self._vars[ifStatement.condition.name.lexeme])}"
+        else:
+            self.generate(ifStatement.condition)
+        self.code += ") {\n\t"
+        self.generate(ifStatement.thenBranch)  # Properly generate the block
+        self.code += "\t}\n"
+
+        if ifStatement.elseBranch is not None:
+            self.code += "\telse {\n\t"
+            self.generate(ifStatement.elseBranch)  # Generate the else block
+            self.code += "\t}\n"
+        return None
 
     def stringify(self, obj):
         if obj == None:
@@ -200,61 +365,39 @@ class Compiler:
     
     def visitPrint(self, printStatement):
         value = self.evaluate(printStatement.expr)
+        #print(self.code)
         if isinstance(printStatement.expr, Variable):
             self.code += f"\tprint_var({value});\n"
         else:
             self.code += f"\tprint({self.stringify(value)});\n"
+        #print(self.code)
         #print(self.stringify(value))
         return None
 
     def visitAssign(self, assignExpr):
         value = self.evaluate(assignExpr.value)
-        
-        distance = self.locals.get(assignExpr)
-        if distance:
-            self.environment.assignAt(distance, assignExpr.name, value)
-        else:
-            self.globals.assign(assignExpr.name, value)
-
-        return value
+        _type = get_type(assignExpr.value)
+        self.code += f"\t{assignExpr.name.lexeme}.varion.{_type} = {value};\n"
+        self.code += f"\t{assignExpr.name.lexeme}.kind = {_type.upper()};\n"
+        self._vars[assignExpr.name.lexeme] = value
     
     def generate(self, statement):
         if statement:
             statement.accept(self)
 
     def generate_code(self):
-        self.sort_tree()
-        self.code = '#include "base.h"\n'
-        for fn in self.functions:
-            self.code += str(fn) + "\n"
-        self.code += 'int main(int argc, const char** argv) {\n'
-        for _any in self._else:
-            self.generate(_any)
-            '''if isinstance(_any, Var):
-                _type = get_type(_any.initializer)
-                value = get_value(_any.initializer)
-                code += f"\tunion var {_any.name.lexeme};\n"
-                if (value != None):
-                    if value == True:
-                        value = "true"
-                    code += f"\t{_any.name.lexeme}.{_type} = {value};\n"
-                self._vars[_any.name.lexeme] = [_type, value]
-            elif isinstance(_any, Print):
-                _type = ""
-                value = ""
-                if isinstance(_any.expr, Literal):
-                    _type = get_type(_any.expr)
-                    value = get_value(_any.expr)
-                else:
-                    #print(self._vars[_any.expr.name.lexeme])
-                    _type = self._vars[_any.expr.name.lexeme][0]
-                    value = self._vars[_any.expr.name.lexeme][1]
-                print(_type)
-                if _type == "str":
-                    code += f"\tprint({value});\n"
-                if _type == "boolean":
-                    code += f'\tprint("{value}");\n'
-                elif _type == "num":
-                    code += f"\tprint_num({value});\n"'''
-        self.code += '\treturn 0;\n}'
-        return self.code
+        try:
+            self.sort_tree()
+            self.code = '#include "base.h"\n'
+            for _var in self.varexprs:
+                self.generate(_var)
+            for fn in self.functions:
+                self.generate(fn)
+            self.code += 'int main(int argc, const char** argv) {\n'
+            self.code += self.main_code
+            for _any in self._else:
+                self.generate(_any)
+            self.code += '\treturn 0;\n}'
+            return self.code
+        except RuntimeException as e:
+            runtimeError(e)

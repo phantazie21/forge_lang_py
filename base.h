@@ -12,6 +12,7 @@ union VarUnion {
     const char* str;
     double num;
     bool boolean;
+    void* none;
 };
 
 enum Kind {
@@ -27,6 +28,9 @@ typedef struct {
 } Var;
 
 static void print_var(Var var) {
+    if (var.kind == NONE) {
+        printf("null\n");
+    }
     if (var.kind == STR) {
         printf("%s\n", var.varion.str);
     } 

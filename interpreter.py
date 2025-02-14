@@ -96,7 +96,6 @@ class Interpreter:
                 return left == right
             elif binary.operator.tokenType == TokenType.BANG_EQUAL:
                 return left != right
-            return None
         except RuntimeException as e:
             runtimeError(e)
 

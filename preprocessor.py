@@ -3,7 +3,7 @@ import re
 import error
 
 IMPORT_PATTERN = re.compile(r'import\s+(?P<module><\w+>|"[\w\/\.\:]+\.fl")')
-HEADERS = pathlib.Path("C:/Users/phanta/forge_lang_py/headers") #Change statically!
+HEADERS = pathlib.Path("./headers") #Change statically!
 
 class Import:
     def __init__(self, path, line, start, end, module):

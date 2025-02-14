@@ -1073,7 +1073,7 @@ class Window(ForgeInstance):
         self.fields = {"app": QApplication(sys.argv), "window": QWidget()}
         self.fields.get("window").setWindowTitle(title)
         self.fields.get("window").resize(width, height)
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(title)
+        #ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(title)
         self.fields.get("window").setWindowIcon(QIcon(f"{HEADERS}/FL.png"))
         if logo:
             self.fields.get("window").setWindowIcon(QIcon(logo))

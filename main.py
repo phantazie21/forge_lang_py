@@ -44,6 +44,10 @@ def run(source, filename="", compile=False, output_name="forged.exe", run_gcc=Fa
     else:
         compiler = Compiler(expr)
         code = compiler.generate_code()
+        if error.hadError:
+            return
+        if error.hadRuntimeError:
+            return
         write_to_file(code, "output.c")
         if run_gcc:
             try:
