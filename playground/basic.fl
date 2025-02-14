@@ -1,7 +1,15 @@
-var string = "kuki";
+var string = "prefix" + "kuki" * 2;
 var num = 0;
-var boolean = true;
+var boolean = false;
 var twoplusfour = 2 + 4;
+var minusone = -(-(-(1 + 1) * 0.5));
+var asd = 2 * twoplusfour;
+var _string = 2 * string;
+out _string;
+_string = "_string";
+out _string;
+out asd;
+out minusone;
 var nothing;
 out string;
 out num;
@@ -11,3 +19,20 @@ out twoplusfour;
 out 0.1;
 out "HALLO";
 out "fasz" + "kuki" + 6;
+/*if (1 < 2) {
+	out "fasz";
+}*/
+if (boolean or (boolean or twoplusfour)) {
+	out "if igaz";
+}
+else {
+	out "if hamis";
+}
+fn kuki(param1, param2) {
+	out param1;
+	return _string;
+}
+kuki(_string, twoplusfour);
+kuki("asd", 0);
+kuki("penisz", "fasz");
+

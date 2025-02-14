@@ -133,7 +133,7 @@ class ForgeScanner:
             if self.match("r"):
                 self.addToken(TokenType.OR)
                 return
-        if c.isalpha():
+        if c.isalpha() or c == '_':
             self.identifier()
         else:
             error(self.line, f"Unexpected character '{c}'.")

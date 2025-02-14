@@ -1,4 +1,4 @@
-import <Time>
+import "../headers/Time.fl"
 var win = window([630, 630], "Minesweeper");
 
 //LOGIC

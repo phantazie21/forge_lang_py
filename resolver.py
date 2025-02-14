@@ -33,8 +33,10 @@ class Resolver:
             self.resolve(stmt)
     
     def resolve(self, stmt):
-        stmt.accept(self)
-
+        try:
+            stmt.accept(self)
+        except:
+            return
     def beginScope(self):
         self.scopes.append({})
 
