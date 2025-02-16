@@ -2,11 +2,13 @@
 Var string;
 Var num;
 Var boolean;
+Var boolean2;
 Var twoplusfour;
 Var minusone;
 Var asd;
 Var _string;
 Var nothing;
+Var i;
 Var kuki(Var param1, Var param2) {
 	Var _return;
 	_return.kind = NONE;
@@ -21,19 +23,24 @@ int main(int argc, const char** argv) {
 	num.kind = NUM;
 	boolean.varion.boolean = false;
 	boolean.kind = BOOLEAN;
+	boolean2.varion = boolean.varion;
+	boolean2.kind = boolean.kind;
 	twoplusfour.varion.num = 6.0;
 	twoplusfour.kind = NUM;
-	minusone.varion.num = -1.0;
-	minusone.kind = NUM;
+	minusone.kind = NONE;
 	asd.varion.num = 12.0;
 	asd.kind = NUM;
 	_string.varion.str = "prefix""kuki""kuki""prefix""kuki""kuki";
 	_string.kind = STR;
 	nothing.kind = NONE;
+	i.varion.num = 0.0;
+	i.kind = NUM;
 	print_var(_string);
 	_string.varion.str = "_string";
 	_string.kind = STR;
 	print_var(_string);
+	_string.varion = string.varion;
+	_string.kind = string.kind;
 	print_var(asd);
 	print_var(minusone);
 	print_var(string);
@@ -44,6 +51,15 @@ int main(int argc, const char** argv) {
 	print("0.1");
 	print("HALLO");
 	print("fasz""kuki""6");
+	if (1.0 > 2.0) {
+		print("fasz");
+	}
+	else	if (2.0 < 1.0) {
+		print("kuki");
+	}
+	else {
+		print("pénisz");
+	}
 	if (boolean.varion.boolean || (boolean.varion.boolean || twoplusfour.varion.num)) {
 		print("if igaz");
 	}

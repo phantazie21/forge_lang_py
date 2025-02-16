@@ -201,7 +201,6 @@ class Compiler:
                 self.checkNumberOperands(binary.operator, left, right)
                 return f"{left} >= {right}"
             elif binary.operator.tokenType == TokenType.LESS:
-                self.checkNumberOperands(binary.operator, left, right)
                 return f"{left} < {right}"
             elif binary.operator.tokenType == TokenType.LESS_EQUAL:
                 self.checkNumberOperands(binary.operator, left, right)
@@ -248,45 +247,47 @@ class Compiler:
 
     def visitVar(self, varStatement):
         value = None
+        _type = None
+        isVar = False
+        varName = ""
         if varStatement.name.lexeme in self._vars.keys():
             return
         if varStatement.initializer != None:
             value = self.evaluate(varStatement.initializer)
-            if value in self._vars.keys():
-                value = self._vars[value]
-            #print(value)
             _type = get_type(value)
-            #print(_type)
-            #if (_type == "str"):
-                #value = f'"{value}"'
+            if value in self._vars.keys():
+                isVar = True
+                varName = value
+                value = self._vars[value]
         self._vars[varStatement.name.lexeme] = value
         self.code += f"Var {varStatement.name.lexeme};\n"
         if varStatement not in self.varexprs:
             if (value != None):
                 '''if value == True or value == False:
                     value = str(value).lower()'''
-                self.code += f"\t{varStatement.name.lexeme}.varion.{_type} = {value};\n"
-                self.code += f"\t{varStatement.name.lexeme}.kind = {_type.upper()};\n"
+                if isVar:
+                    self.code += f"\t{varStatement.name.lexeme}.varion = {varName}.varion;\n"
+                    self.code += f"\t{varStatement.name.lexeme}.kind = {varName}.kind;\n"
+                else:
+                    self.code += f"\t{varStatement.name.lexeme}.varion.{_type} = {value};\n"
+                    self.code += f"\t{varStatement.name.lexeme}.kind = {_type.upper()};\n"
             else:
                 self.code += f"\t{varStatement.name.lexeme}.kind = NONE;\n"
         else:
             if (value != None):
                 '''if value == True or value == False:
                     value = str(value).lower()'''
-                self.main_code += f"\t{varStatement.name.lexeme}.varion.{_type} = {value};\n"
-                self.main_code += f"\t{varStatement.name.lexeme}.kind = {_type.upper()};\n"
+                if isVar:
+                    self.main_code += f"\t{varStatement.name.lexeme}.varion = {varName}.varion;\n"
+                    self.main_code += f"\t{varStatement.name.lexeme}.kind = {varName}.kind;\n"
+                else:
+                    self.main_code += f"\t{varStatement.name.lexeme}.varion.{_type} = {value};\n"
+                    self.main_code += f"\t{varStatement.name.lexeme}.kind = {_type.upper()};\n"
             else:
                 self.main_code += f"\t{varStatement.name.lexeme}.kind = NONE;\n"
         return None
     
     def visitVariable(self, varExpression):
-        #print(self._vars)
-        #return self._vars[varExpression.name.lexeme]
-        #return f"{varExpression.name.lexeme}.{get_type(self._vars[varExpression.name.lexeme])}"
-        #if not by_value:
-            #return varExpression.name.lexeme
-        #else:
-            #return self._vars[varExpression.name.lexeme]
         return varExpression.name.lexeme
 
     def visitLogical(self, logicalExpr):
@@ -312,6 +313,15 @@ class Compiler:
                 return left
             
         return self.evaluate(logicalExpr.right)'''
+    
+    def visitWhile(self, whileStatement):
+        self.code += f"\twhile ("
+        cond = self.evaluate(whileStatement.condition)
+        if cond:
+            self.code += cond
+        self.code += ") {\n\t"
+        self.generate(whileStatement.body)
+        self.code += "\t}\n"
 
     def visitBlock(self, blockStatement):
         self.executeBlock(blockStatement.statements)
@@ -332,15 +342,21 @@ class Compiler:
         if isinstance(ifStatement.condition, Variable):
             self.code += f"{ifStatement.condition.name.lexeme}.varion.{get_type(self._vars[ifStatement.condition.name.lexeme])}"
         else:
-            self.generate(ifStatement.condition)
+            cond = self.evaluate(ifStatement.condition)
+            if cond:
+                self.code += cond
         self.code += ") {\n\t"
         self.generate(ifStatement.thenBranch)  # Properly generate the block
         self.code += "\t}\n"
 
         if ifStatement.elseBranch is not None:
-            self.code += "\telse {\n\t"
+            if isinstance(ifStatement.elseBranch, If):
+                self.code += "\telse"
+            else:
+                self.code += "\telse {\n\t"
             self.generate(ifStatement.elseBranch)  # Generate the else block
-            self.code += "\t}\n"
+            if not isinstance(ifStatement.elseBranch, If):
+                self.code += "\t}\n"
         return None
 
     def stringify(self, obj):
@@ -375,11 +391,15 @@ class Compiler:
         return None
 
     def visitAssign(self, assignExpr):
-        value = self.evaluate(assignExpr.value)
-        _type = get_type(assignExpr.value)
-        self.code += f"\t{assignExpr.name.lexeme}.varion.{_type} = {value};\n"
-        self.code += f"\t{assignExpr.name.lexeme}.kind = {_type.upper()};\n"
-        self._vars[assignExpr.name.lexeme] = value
+        if isinstance(assignExpr.value, Variable):
+            self.code += f"\t{assignExpr.name.lexeme}.varion = {assignExpr.value.name.lexeme}.varion;\n"
+            self.code += f"\t{assignExpr.name.lexeme}.kind = {assignExpr.value.name.lexeme}.kind;\n"
+        else:
+            value = self.evaluate(assignExpr.value)
+            _type = get_type(value)
+            self.code += f"\t{assignExpr.name.lexeme}.varion.{_type} = {value};\n"
+            self.code += f"\t{assignExpr.name.lexeme}.kind = {_type.upper()};\n"
+            self._vars[assignExpr.name.lexeme] = value
     
     def generate(self, statement):
         if statement:
