@@ -9,7 +9,7 @@ var _string = 2 * string;
 out _string;
 _string = "_string";
 out _string;
-_string = string;
+_string = string + _string;
 out asd;
 out minusone;
 var nothing;
@@ -44,7 +44,9 @@ kuki(_string, twoplusfour);
 kuki("asd", 0);
 kuki("penisz", "fasz");
 var i = 0;
-//i = i + 1; PROBLÉMÁS
+i+=1;
+i++;
+out i;
 /*while (i < 10) {
 	i = i + 1;
 }*/

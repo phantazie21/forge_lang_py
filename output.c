@@ -39,8 +39,8 @@ int main(int argc, const char** argv) {
 	_string.varion.str = "_string";
 	_string.kind = STR;
 	print_var(_string);
-	_string.varion = string.varion;
-	_string.kind = string.kind;
+	_string.varion.str = "prefix""kuki""kuki""_string";
+	_string.kind = STR;
 	print_var(asd);
 	print_var(minusone);
 	print_var(string);
@@ -81,5 +81,10 @@ int main(int argc, const char** argv) {
 	arg4.varion.str = "fasz";
 	arg4.kind = STR;
 	kuki(arg3, arg4);
+	i.varion.num = 1.0;
+	i.kind = NUM;
+	i.varion.num = 2.0;
+	i.kind = NUM;
+	print_var(i);
 	return 0;
 }

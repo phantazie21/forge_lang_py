@@ -70,6 +70,8 @@ class Compiler:
             return f'"{literal.value}"'
         elif isinstance(literal.value, bool):
             return str(literal.value).lower()
+        elif isinstance(literal.value, int):
+            return float(literal.value)
         else:
             return literal.value 
 
@@ -146,14 +148,49 @@ class Compiler:
         right = self.evaluate(binary.expr_right)
         try:
             if binary.operator.tokenType == TokenType.PLUS:
-                if isinstance(left, str) or isinstance(right, str):
-                    if isinstance(left, str) and isinstance(right, str):
-                        return left + right
-                    if isinstance(right, str):
-                        return self.stringify(left) + right
-                    if isinstance(left, str):
+                #print(f"{left}({type(left)}), {right}({type(right)}))")
+                if isinstance(left, str) and isinstance(right, float):
+                    if not (left.endswith('"') and left.startswith('"')):
+                        if left in self._vars.keys():
+                            left = self._vars[left]
+                            if isinstance(left, str):
+                                return left + self.stringify(right)
+                        else:
+                            raise RuntimeException(f"{left} is not a valid variable, string or number", binary.operator)
+                    else:
                         return left + self.stringify(right)
-
+                if isinstance(left, float) and isinstance(right, str):
+                    if not (right.endswith('"') and right.startswith('"')):
+                        if right in self._vars.keys():
+                            right = self._vars[right]
+                            if isinstance(right, str):
+                                try:
+                                    return left + float(right)
+                                except:
+                                    return self.stringify(left) + right
+                            elif isinstance(right, float):
+                                return left + right
+                            else:
+                                raise RuntimeException(f"{left} + {right} is not supported", binary.operator)
+                        else:
+                            raise RuntimeException(f"{left} is not a valid variable, string or number", binary.operator)
+                    else:
+                        try:
+                            return left + float(right)
+                        except:
+                            return self.stringify(left) + right
+                if isinstance(left, str) and isinstance(right, str):
+                    if not (left.endswith('"') and left.startswith('"')):
+                        if left in self._vars.keys():
+                            left = self._vars[left]
+                        else:
+                            raise RuntimeException(f"{left} is not a valid variable, string or number", binary.operator)
+                    if not (right.endswith('"') and right.startswith('"')):
+                        if right in self._vars.keys():
+                            right = self._vars[right]
+                        else:
+                            raise RuntimeException(f"{right} is not a valid variable, string or number", binary.operator)
+                    return left + right
                 self.checkNumberOperands(binary.operator, left, right)
                 return left + right
             elif binary.operator.tokenType == TokenType.MINUS:
